@@ -48,19 +48,28 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
   }
 
   return (
-    <div className="space-y-3">
-      <label className="block text-sm font-medium text-gray-700">Images</label>
+    <div className="space-y-2">
+      <label className="block text-xs font-semibold" style={{ color: "#323130" }}>Images</label>
 
       {/* Dropzone */}
       <div
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
         onClick={() => inputRef.current?.click()}
-        className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 px-6 py-8 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
+        className="flex flex-col items-center justify-center gap-2 px-6 py-8 cursor-pointer transition-colors"
+        style={{ border: "1px dashed #8a8886", backgroundColor: "#faf9f8" }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.borderColor = "#0078d4";
+          (e.currentTarget as HTMLElement).style.backgroundColor = "#f0f6ff";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.borderColor = "#8a8886";
+          (e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f8";
+        }}
       >
         {uploading ? (
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <svg className="animate-spin w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24">
+          <div className="flex items-center gap-2 text-sm" style={{ color: "#605e5c" }}>
+            <svg className="animate-spin w-4 h-4" style={{ color: "#0078d4" }} fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
@@ -68,11 +77,11 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
           </div>
         ) : (
           <>
-            <Upload className="w-6 h-6 text-gray-400" />
-            <p className="text-sm text-gray-500">
-              <span className="font-medium text-indigo-600">Click to upload</span> or drag and drop
+            <Upload className="w-5 h-5" style={{ color: "#a19f9d" }} />
+            <p className="text-sm" style={{ color: "#605e5c" }}>
+              <span className="font-medium" style={{ color: "#0078d4" }}>Click to upload</span> or drag and drop
             </p>
-            <p className="text-xs text-gray-400">JPEG, PNG, WebP, GIF — max 5MB each</p>
+            <p className="text-xs" style={{ color: "#a19f9d" }}>JPEG, PNG, WebP, GIF — max 5MB each</p>
           </>
         )}
         <input
@@ -85,27 +94,26 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
         />
       </div>
 
-      {error && (
-        <p className="text-xs text-red-600">{error}</p>
-      )}
+      {error && <p className="text-xs" style={{ color: "#a4262c" }}>{error}</p>}
 
       {/* Preview grid */}
       {images.length > 0 && (
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 pt-1">
           {images.map((url, i) => (
-            <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+            <div key={i} className="relative group aspect-square overflow-hidden bg-[#f3f2f1]" style={{ border: "1px solid #edebe9" }}>
               {url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={url} alt={`Image ${i + 1}`} className="w-full h-full object-cover" />
               ) : (
                 <div className="flex items-center justify-center w-full h-full">
-                  <ImageIcon className="w-6 h-6 text-gray-300" />
+                  <ImageIcon className="w-5 h-5" style={{ color: "#a19f9d" }} />
                 </div>
               )}
               <button
                 type="button"
                 onClick={() => removeImage(i)}
-                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-0.5 right-0.5 w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{ backgroundColor: "#a4262c", color: "#ffffff" }}
               >
                 <X className="w-3 h-3" />
               </button>

@@ -1,5 +1,10 @@
 import React from "react";
 
+const inputBase =
+  "w-full px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1 bg-white";
+const inputNormal = "border-[#8a8886] hover:border-[#323130] focus:border-[#0078d4] focus:ring-[#0078d4]";
+const inputError = "border-[#a4262c] bg-[#fde7e9] focus:ring-[#a4262c]";
+
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
@@ -12,24 +17,18 @@ export function Input({ label, error, hint, className = "", id, ...props }: Inpu
   return (
     <div className="space-y-1">
       {label && (
-        <label
-          htmlFor={inputId}
-          className="block text-sm font-medium text-gray-700"
-        >
+        <label htmlFor={inputId} className="block text-xs font-semibold" style={{ color: "#323130" }}>
           {label}
         </label>
       )}
       <input
         id={inputId}
-        className={`w-full px-3 py-2 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-          error
-            ? "border-red-300 bg-red-50"
-            : "border-gray-300 bg-white hover:border-gray-400"
-        } ${className}`}
+        className={`${inputBase} border ${error ? inputError : inputNormal} ${className}`}
+        style={{ color: "#323130" }}
         {...props}
       />
-      {hint && !error && <p className="text-xs text-gray-500">{hint}</p>}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {hint && !error && <p className="text-xs" style={{ color: "#605e5c" }}>{hint}</p>}
+      {error && <p className="text-xs" style={{ color: "#a4262c" }}>{error}</p>}
     </div>
   );
 }
@@ -46,24 +45,18 @@ export function Textarea({ label, error, hint, className = "", id, ...props }: T
   return (
     <div className="space-y-1">
       {label && (
-        <label
-          htmlFor={inputId}
-          className="block text-sm font-medium text-gray-700"
-        >
+        <label htmlFor={inputId} className="block text-xs font-semibold" style={{ color: "#323130" }}>
           {label}
         </label>
       )}
       <textarea
         id={inputId}
-        className={`w-full px-3 py-2 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y ${
-          error
-            ? "border-red-300 bg-red-50"
-            : "border-gray-300 bg-white hover:border-gray-400"
-        } ${className}`}
+        className={`${inputBase} border resize-y ${error ? inputError : inputNormal} ${className}`}
+        style={{ color: "#323130" }}
         {...props}
       />
-      {hint && !error && <p className="text-xs text-gray-500">{hint}</p>}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {hint && !error && <p className="text-xs" style={{ color: "#605e5c" }}>{hint}</p>}
+      {error && <p className="text-xs" style={{ color: "#a4262c" }}>{error}</p>}
     </div>
   );
 }
@@ -80,26 +73,20 @@ export function Select({ label, error, hint, className = "", id, children, ...pr
   return (
     <div className="space-y-1">
       {label && (
-        <label
-          htmlFor={inputId}
-          className="block text-sm font-medium text-gray-700"
-        >
+        <label htmlFor={inputId} className="block text-xs font-semibold" style={{ color: "#323130" }}>
           {label}
         </label>
       )}
       <select
         id={inputId}
-        className={`w-full px-3 py-2 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-          error
-            ? "border-red-300 bg-red-50"
-            : "border-gray-300 bg-white hover:border-gray-400"
-        } ${className}`}
+        className={`${inputBase} border ${error ? inputError : inputNormal} ${className}`}
+        style={{ color: "#323130" }}
         {...props}
       >
         {children}
       </select>
-      {hint && !error && <p className="text-xs text-gray-500">{hint}</p>}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {hint && !error && <p className="text-xs" style={{ color: "#605e5c" }}>{hint}</p>}
+      {error && <p className="text-xs" style={{ color: "#a4262c" }}>{error}</p>}
     </div>
   );
 }

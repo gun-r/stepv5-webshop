@@ -33,59 +33,61 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1a1a2e] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: "#1b1b1b" }}>
+      <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600 mb-4">
-            <ShoppingCart className="w-8 h-8 text-white" />
+          <div className="inline-flex items-center justify-center w-14 h-14 mb-4" style={{ backgroundColor: "#0078d4" }}>
+            <ShoppingCart className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">WebShop Manager</h1>
-          <p className="text-white/50 text-sm mt-1">
+          <h1 className="text-xl font-semibold text-white">WebShop Manager</h1>
+          <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.45)" }}>
             Multi-site WooCommerce Management
           </p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Sign in</h2>
+        <div className="bg-white p-8" style={{ border: "1px solid #edebe9" }}>
+          <h2 className="text-sm font-semibold mb-5" style={{ color: "#323130" }}>Sign in to your account</h2>
 
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+            <div className="mb-4 p-3 text-sm" style={{ backgroundColor: "#fde7e9", border: "1px solid #f1707b", color: "#a4262c" }}>
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
+              <label className="block text-xs font-semibold" style={{ color: "#323130" }}>Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#a19f9d" }} />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1"
+                  style={{ border: "1px solid #8a8886", color: "#323130" }}
+                  onFocus={(e) => { e.target.style.borderColor = "#0078d4"; e.target.style.boxShadow = "0 0 0 1px #0078d4"; }}
+                  onBlur={(e) => { e.target.style.borderColor = "#8a8886"; e.target.style.boxShadow = ""; }}
                   placeholder="admin@webshop.com"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
+              <label className="block text-xs font-semibold" style={{ color: "#323130" }}>Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#a19f9d" }} />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full pl-9 pr-3 py-2 text-sm focus:outline-none"
+                  style={{ border: "1px solid #8a8886", color: "#323130" }}
+                  onFocus={(e) => { e.target.style.borderColor = "#0078d4"; e.target.style.boxShadow = "0 0 0 1px #0078d4"; }}
+                  onBlur={(e) => { e.target.style.borderColor = "#8a8886"; e.target.style.boxShadow = ""; }}
                   placeholder="••••••••"
                 />
               </div>
@@ -94,7 +96,10 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-2 px-4 text-sm font-medium text-white flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              style={{ backgroundColor: loading ? "#106ebe" : "#0078d4" }}
+              onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.backgroundColor = "#106ebe"; }}
+              onMouseLeave={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.backgroundColor = "#0078d4"; }}
             >
               {loading && (
                 <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">

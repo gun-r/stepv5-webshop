@@ -55,21 +55,25 @@ export default function ProductsPage() {
         <Header title="Products" subtitle="Manage and sync your product catalog" />
         <main className="flex-1 p-6 space-y-4">
           {/* Toolbar */}
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-2 flex-wrap">
             <div className="relative flex-1 min-w-48">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#a19f9d" }} />
               <input
                 type="text"
                 placeholder="Search products..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full pl-9 pr-3 py-2 text-sm focus:outline-none"
+                style={{ border: "1px solid #8a8886", color: "#323130", backgroundColor: "#ffffff" }}
+                onFocus={(e) => { e.target.style.borderColor = "#0078d4"; e.target.style.boxShadow = "0 0 0 1px #0078d4"; }}
+                onBlur={(e) => { e.target.style.borderColor = "#8a8886"; e.target.style.boxShadow = ""; }}
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="px-3 py-2 text-sm focus:outline-none"
+              style={{ border: "1px solid #8a8886", color: "#323130", backgroundColor: "#ffffff" }}
             >
               <option value="">All statuses</option>
               <option value="draft">Draft</option>
@@ -77,7 +81,10 @@ export default function ProductsPage() {
             </select>
             <Link
               href="/products/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-white text-sm font-medium transition-colors"
+              style={{ backgroundColor: "#0078d4" }}
+              onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = "#106ebe"}
+              onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = "#0078d4"}
             >
               <Plus className="w-4 h-4" />
               Add Product
@@ -88,42 +95,28 @@ export default function ProductsPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Product
-                    </th>
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      SKU
-                    </th>
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Price
-                    </th>
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Sync Status
-                    </th>
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Live On
-                    </th>
-                    <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+                  <tr style={{ borderBottom: "1px solid #edebe9", backgroundColor: "#f3f2f1" }}>
+                    <th className="text-left px-5 py-2.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Product</th>
+                    <th className="text-left px-5 py-2.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>SKU</th>
+                    <th className="text-left px-5 py-2.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Price</th>
+                    <th className="text-left px-5 py-2.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Status</th>
+                    <th className="text-left px-5 py-2.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Sync Status</th>
+                    <th className="text-left px-5 py-2.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Live On</th>
+                    <th className="text-right px-5 py-2.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-gray-400 text-sm">
+                      <td colSpan={7} className="px-5 py-8 text-center text-sm" style={{ color: "#a19f9d" }}>
                         Loading...
                       </td>
                     </tr>
                   ) : products.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-gray-400 text-sm">
+                      <td colSpan={7} className="px-5 py-12 text-center text-sm" style={{ color: "#a19f9d" }}>
                         No products found.{" "}
-                        <Link href="/products/new" className="text-indigo-600 hover:underline">
+                        <Link href="/products/new" className="hover:underline" style={{ color: "#0078d4" }}>
                           Add your first product
                         </Link>
                         .
@@ -131,39 +124,42 @@ export default function ProductsPage() {
                     </tr>
                   ) : (
                     products.map((product) => (
-                      <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-3">
-                          <p className="text-sm font-medium text-gray-900">{product.title}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">
+                      <tr key={product.id} className="transition-colors" style={{ borderBottom: "1px solid #f3f2f1" }}
+                        onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f8"}
+                        onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = ""}
+                      >
+                        <td className="px-5 py-2.5">
+                          <p className="text-sm font-medium" style={{ color: "#323130" }}>{product.title}</p>
+                          <p className="text-xs mt-0.5" style={{ color: "#a19f9d" }}>
                             {new Date(product.updatedAt).toLocaleDateString()}
                           </p>
                         </td>
-                        <td className="px-6 py-3 text-sm text-gray-600">
-                          {product.sku || <span className="text-gray-300">—</span>}
+                        <td className="px-5 py-2.5 text-sm" style={{ color: "#605e5c" }}>
+                          {product.sku || <span style={{ color: "#c8c6c4" }}>—</span>}
                         </td>
-                        <td className="px-6 py-3 text-sm text-gray-600">
+                        <td className="px-5 py-2.5 text-sm" style={{ color: "#605e5c" }}>
                           ${product.price}
                         </td>
-                        <td className="px-6 py-3">
+                        <td className="px-5 py-2.5">
                           <Badge variant={product.status === "published" ? "success" : "default"}>
                             {product.status}
                           </Badge>
                         </td>
-                        <td className="px-6 py-3">
+                        <td className="px-5 py-2.5">
                           <div className="flex flex-wrap gap-1">
                             {product.syncs.length === 0 ? (
-                              <span className="text-xs text-gray-400">Not synced</span>
+                              <span className="text-xs" style={{ color: "#a19f9d" }}>Not synced</span>
                             ) : (
                               product.syncs.map((sync) => (
                                 <div key={sync.id} className="flex items-center gap-1">
                                   <SyncStatusBadge status={sync.status} />
-                                  <span className="text-xs text-gray-500">{sync.site.name}</span>
+                                  <span className="text-xs" style={{ color: "#605e5c" }}>{sync.site.name}</span>
                                 </div>
                               ))
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-3">
+                        <td className="px-5 py-2.5">
                           <div className="flex flex-col gap-1">
                             {product.syncs
                               .filter((s) => s.status === "synced" && s.wooProductId)
@@ -173,21 +169,22 @@ export default function ProductsPage() {
                                   href={`${sync.site.url.replace(/\/$/, "")}/?p=${sync.wooProductId}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 hover:underline"
+                                  className="inline-flex items-center gap-1 text-xs hover:underline"
+                                  style={{ color: "#0078d4" }}
                                 >
                                   <ExternalLink className="w-3 h-3" />
                                   {sync.site.name}
                                 </a>
                               ))}
                             {product.syncs.filter((s) => s.status === "synced" && s.wooProductId).length === 0 && (
-                              <span className="text-xs text-gray-300">—</span>
+                              <span className="text-xs" style={{ color: "#c8c6c4" }}>—</span>
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-3 text-right">
+                        <td className="px-5 py-2.5 text-right">
                           <Link
                             href={`/products/${product.id}`}
-                            className="inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                            className="inline-flex items-center gap-1.5 text-sm font-medium hover:underline" style={{ color: "#0078d4" }}
                           >
                             <Pencil className="w-3.5 h-3.5" />
                             Edit

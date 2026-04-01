@@ -32,7 +32,8 @@ export default async function SitesPage() {
           <div className="flex justify-end">
             <Link
               href="/sites/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-white text-sm font-medium transition-colors hover:bg-[#106ebe]"
+              style={{ backgroundColor: "#0078d4" }}
             >
               <Plus className="w-4 h-4" />
               Add Site
@@ -43,39 +44,21 @@ export default async function SitesPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      URL
-                    </th>
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Language
-                    </th>
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Syncs
-                    </th>
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+                  <tr style={{ borderBottom: "1px solid #edebe9", backgroundColor: "#f3f2f1" }}>
+                    <th className="text-left px-5 py-2.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Name</th>
+                    <th className="text-left px-5 py-2.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>URL</th>
+                    <th className="text-left px-5 py-2.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Language</th>
+                    <th className="text-left px-5 py-2.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Syncs</th>
+                    <th className="text-left px-5 py-2.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Status</th>
+                    <th className="text-right px-5 py-2.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   {sites.length === 0 ? (
                     <tr>
-                      <td
-                        colSpan={6}
-                        className="px-6 py-12 text-center text-gray-400 text-sm"
-                      >
+                      <td colSpan={6} className="px-5 py-12 text-center text-sm" style={{ color: "#a19f9d" }}>
                         No sites yet.{" "}
-                        <Link
-                          href="/sites/new"
-                          className="text-indigo-600 hover:underline"
-                        >
+                        <Link href="/sites/new" className="hover:underline" style={{ color: "#0078d4" }}>
                           Add your first site
                         </Link>
                         .
@@ -83,44 +66,23 @@ export default async function SitesPage() {
                     </tr>
                   ) : (
                     sites.map((site) => (
-                      <tr
-                        key={site.id}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="px-6 py-3 text-sm font-medium text-gray-900">
-                          {site.name}
-                        </td>
-                        <td className="px-6 py-3 text-sm text-gray-600">
-                          <a
-                            href={site.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 hover:text-indigo-600 transition-colors"
-                          >
+                      <tr key={site.id} className="hover:bg-[#faf9f8] transition-colors" style={{ borderBottom: "1px solid #f3f2f1" }}>
+                        <td className="px-5 py-2.5 text-sm font-medium" style={{ color: "#323130" }}>{site.name}</td>
+                        <td className="px-5 py-2.5 text-sm" style={{ color: "#605e5c" }}>
+                          <a href={site.url} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1 transition-colors hover:underline" style={{ color: "#0078d4" }}>
                             {site.url.replace(/^https?:\/\//, "")}
                             <ExternalLink className="w-3 h-3" />
                           </a>
                         </td>
-                        <td className="px-6 py-3 text-sm text-gray-600 uppercase">
-                          {site.defaultLanguage}
+                        <td className="px-5 py-2.5 text-sm uppercase" style={{ color: "#605e5c" }}>{site.defaultLanguage}</td>
+                        <td className="px-5 py-2.5 text-sm" style={{ color: "#605e5c" }}>{site._count.syncs}</td>
+                        <td className="px-5 py-2.5">
+                          <Badge variant={site.status === "active" ? "success" : "default"}>{site.status}</Badge>
                         </td>
-                        <td className="px-6 py-3 text-sm text-gray-600">
-                          {site._count.syncs}
-                        </td>
-                        <td className="px-6 py-3">
-                          <Badge
-                            variant={
-                              site.status === "active" ? "success" : "default"
-                            }
-                          >
-                            {site.status}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-3 text-right">
-                          <Link
-                            href={`/sites/${site.id}`}
-                            className="inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-                          >
+                        <td className="px-5 py-2.5 text-right">
+                          <Link href={`/sites/${site.id}`}
+                            className="inline-flex items-center gap-1.5 text-sm font-medium hover:underline" style={{ color: "#0078d4" }}>
                             <Pencil className="w-3.5 h-3.5" />
                             Edit
                           </Link>

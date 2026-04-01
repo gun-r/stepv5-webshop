@@ -112,7 +112,7 @@ export default function NewProductPage() {
         <main className="flex-1 p-6 max-w-3xl">
           <Link
             href="/products"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6"
+            className="inline-flex items-center gap-1.5 text-sm mb-6" style={{ color: "#605e5c" }}
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Products
@@ -204,22 +204,25 @@ export default function NewProductPage() {
                 {sites.length === 0 ? (
                   <p className="text-sm text-gray-500">
                     No active sites found.{" "}
-                    <Link href="/sites/new" className="text-blue-600 hover:underline">
+                    <Link href="/sites/new" className="hover:underline" style={{ color: "#0078d4" }}>
                       Add a site
                     </Link>{" "}
                     first.
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    <p className="text-sm text-gray-500">
+                    <p className="text-xs" style={{ color: "#605e5c" }}>
                       Select which websites to sync this product to after creation.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {sites.map((site) => (
                         <label
                           key={site.id}
-                          className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-400 cursor-pointer transition-colors"
-                          style={selectedSites.includes(site.id) ? { borderColor: "#3b82f6", backgroundColor: "#eff6ff" } : {}}
+                          className="flex items-center gap-3 p-3 cursor-pointer transition-colors"
+                          style={selectedSites.includes(site.id)
+                            ? { border: "1px solid #0078d4", backgroundColor: "#f0f6ff" }
+                            : { border: "1px solid #edebe9", backgroundColor: "#ffffff" }
+                          }
                         >
                           <input
                             type="checkbox"

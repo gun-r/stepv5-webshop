@@ -269,24 +269,26 @@ export default function EditProductPage() {
         <main className="flex-1 p-6 max-w-4xl space-y-6">
           <Link
             href="/products"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700"
+            className="inline-flex items-center gap-1.5 text-sm" style={{ color: "#605e5c" }}
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Products
           </Link>
 
           {/* Tabs */}
-          <div className="border-b border-gray-200">
-            <nav className="flex gap-1">
+          <div style={{ borderBottom: "1px solid #edebe9" }}>
+            <nav className="flex">
               {tabs.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setTab(t.id)}
-                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                    tab === t.id
-                      ? "border-indigo-600 text-indigo-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
+                  style={tab === t.id
+                    ? { borderBottomColor: "#0078d4", color: "#0078d4" }
+                    : { borderBottomColor: "transparent", color: "#605e5c" }
+                  }
+                  onMouseEnter={(e) => { if (tab !== t.id) (e.currentTarget as HTMLElement).style.color = "#323130"; }}
+                  onMouseLeave={(e) => { if (tab !== t.id) (e.currentTarget as HTMLElement).style.color = "#605e5c"; }}
                 >
                   {t.icon}
                   {t.label}
@@ -297,8 +299,8 @@ export default function EditProductPage() {
 
           {/* Live links banner */}
           {product.syncs.some((s) => s.status === "synced" && s.wooProductId) && (
-            <div className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-lg bg-green-50 border border-green-200">
-              <span className="text-sm font-medium text-green-800">Live on:</span>
+            <div className="flex flex-wrap items-center gap-3 px-4 py-2.5" style={{ backgroundColor: "#dff6dd", border: "1px solid #107c10" }}>
+              <span className="text-xs font-semibold" style={{ color: "#107c10" }}>Live on:</span>
               {product.syncs
                 .filter((s) => s.status === "synced" && s.wooProductId)
                 .map((s) => (
@@ -307,9 +309,10 @@ export default function EditProductPage() {
                     href={`${s.site.url.replace(/\/$/, "")}/?p=${s.wooProductId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm text-green-700 hover:text-green-900 font-medium hover:underline"
+                    className="inline-flex items-center gap-1 text-xs font-medium hover:underline"
+                    style={{ color: "#107c10" }}
                   >
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <ExternalLink className="w-3 h-3" />
                     {s.site.name}
                   </a>
                 ))}
@@ -520,11 +523,11 @@ export default function EditProductPage() {
                           return (
                             <div
                               key={site.id}
-                              className={`flex items-center justify-between p-4 rounded-lg border transition-colors cursor-pointer ${
-                                isSelected
-                                  ? "border-indigo-300 bg-indigo-50"
-                                  : "border-gray-200 hover:bg-gray-50"
-                              }`}
+                              className="flex items-center justify-between p-3 transition-colors cursor-pointer"
+                            style={isSelected
+                              ? { border: "1px solid #0078d4", backgroundColor: "#f0f6ff" }
+                              : { border: "1px solid #edebe9", backgroundColor: "#ffffff" }
+                            }
                               onClick={() => toggleSite(site.id)}
                             >
                               <div className="flex items-center gap-3">
