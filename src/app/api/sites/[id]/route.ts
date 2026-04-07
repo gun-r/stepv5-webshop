@@ -9,7 +9,10 @@ const updateSchema = z.object({
   url: z.string().url().optional(),
   consumerKey: z.string().min(1).optional(),
   consumerSecret: z.string().min(1).optional(),
+  wpUsername: z.string().nullable().optional(),
+  wpAppPassword: z.string().nullable().optional(),
   defaultLanguage: z.string().optional(),
+  currency: z.string().optional(),
   status: z.enum(["active", "inactive"]).optional(),
 });
 
@@ -45,17 +48,21 @@ export async function PUT(
     );
   }
 
-  const site = await prisma.site.update({
-    where: { id },
-    data: result.data,
-  });
-
-  return NextResponse.json(site);
+  try {
+    const site = await prisma.site.update({
+      where: { id },
+      data: result.data,
+    });
+    return NextResponse.json(site);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> } 
 ) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

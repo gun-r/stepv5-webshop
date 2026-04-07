@@ -51,52 +51,43 @@ export async function translateProduct(
   product: Product,
   targetLang: string,
   sourceLang: string,
-  config: TranslateConfig
+  config: TranslateConfig,
+  fields?: ("title" | "description" | "shortDescription")[]
 ): Promise<{
   success: boolean;
   title?: string;
+  shortDescription?: string;
   description?: string;
   error?: string;
 }> {
   const { libreTranslateUrl, libreTranslateApiKey } = config;
+  const translateFields = fields ?? ["title", "description", "shortDescription"];
 
   if (!libreTranslateUrl) {
     return { success: false, error: "LibreTranslate URL not configured" };
   }
 
-  const titleResult = await translateText(
-    product.title,
-    targetLang,
-    sourceLang,
-    libreTranslateUrl,
-    libreTranslateApiKey
-  );
+  let title: string | undefined;
+  let shortDescription: string | undefined;
+  let description: string | undefined;
 
-  if (!titleResult.success) {
-    return { success: false, error: titleResult.error };
+  if (translateFields.includes("title")) {
+    const r = await translateText(product.title, targetLang, sourceLang, libreTranslateUrl, libreTranslateApiKey);
+    if (!r.success) return { success: false, error: r.error };
+    title = r.translated;
   }
 
-  let descriptionResult: { success: boolean; translated?: string; error?: string } = {
-    success: true,
-    translated: "",
-  };
-
-  if (product.description) {
-    descriptionResult = await translateText(
-      product.description,
-      targetLang,
-      sourceLang,
-      libreTranslateUrl,
-      libreTranslateApiKey
-    );
-    if (!descriptionResult.success) {
-      return { success: false, error: descriptionResult.error };
-    }
+  if (translateFields.includes("shortDescription") && product.shortDescription) {
+    const r = await translateText(product.shortDescription, targetLang, sourceLang, libreTranslateUrl, libreTranslateApiKey);
+    if (!r.success) return { success: false, error: r.error };
+    shortDescription = r.translated;
   }
 
-  return {
-    success: true,
-    title: titleResult.translated,
-    description: descriptionResult.translated || undefined,
-  };
+  if (translateFields.includes("description") && product.description) {
+    const r = await translateText(product.description, targetLang, sourceLang, libreTranslateUrl, libreTranslateApiKey);
+    if (!r.success) return { success: false, error: r.error };
+    description = r.translated;
+  }
+
+  return { success: true, title, shortDescription, description };
 }

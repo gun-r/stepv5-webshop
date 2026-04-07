@@ -1,7 +1,7 @@
 import React from "react";
 
 const inputBase =
-  "w-full px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1 bg-white";
+  "w-full px-2.5 py-1.5 text-xs transition-colors focus:outline-none focus:ring-1 bg-white";
 const inputNormal = "border-[#8a8886] hover:border-[#323130] focus:border-[#0078d4] focus:ring-[#0078d4]";
 const inputError = "border-[#a4262c] bg-[#fde7e9] focus:ring-[#a4262c]";
 
@@ -15,9 +15,9 @@ export function Input({ label, error, hint, className = "", id, ...props }: Inpu
   const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       {label && (
-        <label htmlFor={inputId} className="block text-xs font-semibold" style={{ color: "#323130" }}>
+        <label htmlFor={inputId} className="block text-xs font-medium" style={{ color: "#323130" }}>
           {label}
         </label>
       )}
@@ -27,8 +27,8 @@ export function Input({ label, error, hint, className = "", id, ...props }: Inpu
         style={{ color: "#323130" }}
         {...props}
       />
-      {hint && !error && <p className="text-xs" style={{ color: "#605e5c" }}>{hint}</p>}
-      {error && <p className="text-xs" style={{ color: "#a4262c" }}>{error}</p>}
+      {hint && !error && <p className="text-xs" style={{ color: "#605e5c", fontSize: "10px" }}>{hint}</p>}
+      {error && <p className="text-xs" style={{ color: "#a4262c", fontSize: "10px" }}>{error}</p>}
     </div>
   );
 }
@@ -43,9 +43,9 @@ export function Textarea({ label, error, hint, className = "", id, ...props }: T
   const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       {label && (
-        <label htmlFor={inputId} className="block text-xs font-semibold" style={{ color: "#323130" }}>
+        <label htmlFor={inputId} className="block text-xs font-medium" style={{ color: "#323130" }}>
           {label}
         </label>
       )}
@@ -55,8 +55,8 @@ export function Textarea({ label, error, hint, className = "", id, ...props }: T
         style={{ color: "#323130" }}
         {...props}
       />
-      {hint && !error && <p className="text-xs" style={{ color: "#605e5c" }}>{hint}</p>}
-      {error && <p className="text-xs" style={{ color: "#a4262c" }}>{error}</p>}
+      {hint && !error && <p className="text-xs" style={{ color: "#605e5c", fontSize: "10px" }}>{hint}</p>}
+      {error && <p className="text-xs" style={{ color: "#a4262c", fontSize: "10px" }}>{error}</p>}
     </div>
   );
 }
@@ -71,9 +71,9 @@ export function Select({ label, error, hint, className = "", id, children, ...pr
   const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       {label && (
-        <label htmlFor={inputId} className="block text-xs font-semibold" style={{ color: "#323130" }}>
+        <label htmlFor={inputId} className="block text-xs font-medium" style={{ color: "#323130" }}>
           {label}
         </label>
       )}
@@ -85,8 +85,8 @@ export function Select({ label, error, hint, className = "", id, children, ...pr
       >
         {children}
       </select>
-      {hint && !error && <p className="text-xs" style={{ color: "#605e5c" }}>{hint}</p>}
-      {error && <p className="text-xs" style={{ color: "#a4262c" }}>{error}</p>}
+      {hint && !error && <p className="text-xs" style={{ color: "#605e5c", fontSize: "10px" }}>{hint}</p>}
+      {error && <p className="text-xs" style={{ color: "#a4262c", fontSize: "10px" }}>{error}</p>}
     </div>
   );
 }

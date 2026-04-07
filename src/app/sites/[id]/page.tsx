@@ -12,16 +12,42 @@ import { ArrowLeft, Save, Trash2, Wifi } from "lucide-react";
 
 const LANGUAGES = [
   { code: "en", label: "English" },
+  { code: "da", label: "Danish" },
   { code: "es", label: "Spanish" },
   { code: "fr", label: "French" },
   { code: "de", label: "German" },
   { code: "it", label: "Italian" },
   { code: "pt", label: "Portuguese" },
   { code: "nl", label: "Dutch" },
+  { code: "sv", label: "Swedish" },
+  { code: "nb", label: "Norwegian" },
+  { code: "fi", label: "Finnish" },
+  { code: "pl", label: "Polish" },
   { code: "ru", label: "Russian" },
   { code: "zh", label: "Chinese" },
   { code: "ja", label: "Japanese" },
   { code: "ar", label: "Arabic" },
+];
+
+const CURRENCIES = [
+  { code: "EUR", label: "Euro (€)" },
+  { code: "USD", label: "US Dollar ($)" },
+  { code: "GBP", label: "British Pound (£)" },
+  { code: "DKK", label: "Danish Krone (kr)" },
+  { code: "SEK", label: "Swedish Krona (kr)" },
+  { code: "NOK", label: "Norwegian Krone (kr)" },
+  { code: "CHF", label: "Swiss Franc (CHF)" },
+  { code: "PLN", label: "Polish Złoty (zł)" },
+  { code: "CZK", label: "Czech Koruna (Kč)" },
+  { code: "HUF", label: "Hungarian Forint (Ft)" },
+  { code: "RON", label: "Romanian Leu (lei)" },
+  { code: "BGN", label: "Bulgarian Lev (лв)" },
+  { code: "AUD", label: "Australian Dollar (A$)" },
+  { code: "CAD", label: "Canadian Dollar (C$)" },
+  { code: "JPY", label: "Japanese Yen (¥)" },
+  { code: "CNY", label: "Chinese Yuan (¥)" },
+  { code: "AED", label: "UAE Dirham (AED)" },
+  { code: "BRL", label: "Brazilian Real (R$)" },
 ];
 
 interface SiteData {
@@ -30,7 +56,10 @@ interface SiteData {
   url: string;
   consumerKey: string;
   consumerSecret: string;
+  wpUsername: string | null;
+  wpAppPassword: string | null;
   defaultLanguage: string;
+  currency: string;
   status: string;
 }
 
@@ -50,8 +79,8 @@ export default function EditSitePage() {
   useEffect(() => {
     fetch(`/api/sites/${id}`)
       .then((r) => r.json())
-      .then((data) => {
-        setForm(data);
+      .then((data: SiteData) => {
+        setForm({ ...data, currency: data.currency || "EUR" });
         setLoading(false);
       });
   }, [id]);
@@ -62,13 +91,24 @@ export default function EditSitePage() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    if (!form) return;
     setSaving(true);
     setError("");
 
     const res = await fetch(`/api/sites/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        name: form.name,
+        url: form.url,
+        consumerKey: form.consumerKey,
+        consumerSecret: form.consumerSecret,
+        wpUsername: form.wpUsername || null,
+        wpAppPassword: form.wpAppPassword || null,
+        defaultLanguage: form.defaultLanguage,
+        currency: form.currency,
+        status: form.status,
+      }),
     });
 
     setSaving(false);
@@ -76,8 +116,9 @@ export default function EditSitePage() {
     if (res.ok) {
       router.push("/sites");
     } else {
-      const data = await res.json();
-      setError(data.error || "Failed to save");
+      const text = await res.text();
+      const data = text ? (JSON.parse(text) as { error?: string }) : {};
+      setError(data.error || `Failed to save (${res.status})`);
     }
   }
 
@@ -124,7 +165,7 @@ export default function EditSitePage() {
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <Header title={`Edit: ${form.name}`} subtitle="Update site configuration" />
-        <main className="flex-1 p-6 max-w-2xl space-y-6">
+        <main className="flex-1 p-4 max-w-xl space-y-4">
           <Link
             href="/sites"
             className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700"
@@ -191,6 +232,32 @@ export default function EditSitePage() {
                   required
                 />
 
+                <div className="pt-2 pb-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>
+                    WordPress Media Upload (for product images)
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: "#a19f9d" }}>
+                    Required to upload images directly to the WordPress media library.
+                    Generate an Application Password in WordPress under Users › Profile › Application Passwords.
+                  </p>
+                </div>
+
+                <Input
+                  label="WP Username"
+                  value={form.wpUsername || ""}
+                  onChange={(e) => update("wpUsername", e.target.value)}
+                  placeholder="your-wp-username (optional)"
+                />
+
+                <Input
+                  label="WP Application Password"
+                  type="password"
+                  value={form.wpAppPassword || ""}
+                  onChange={(e) => update("wpAppPassword", e.target.value)}
+                  placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+                  hint="WordPress Application Password — not your login password"
+                />
+
                 <Select
                   label="Default Language"
                   value={form.defaultLanguage}
@@ -199,6 +266,18 @@ export default function EditSitePage() {
                   {LANGUAGES.map((lang) => (
                     <option key={lang.code} value={lang.code}>
                       {lang.label} ({lang.code})
+                    </option>
+                  ))}
+                </Select>
+
+                <Select
+                  label="Store Currency"
+                  value={form.currency}
+                  onChange={(e) => update("currency", e.target.value)}
+                >
+                  {CURRENCIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.label}
                     </option>
                   ))}
                 </Select>

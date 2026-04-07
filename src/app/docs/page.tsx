@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { DocsDownloadButton } from "@/components/ui/DocsDownloadButton";
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
@@ -101,13 +102,15 @@ export default async function DocsPage() {
     { id: "auth", label: "Authentication" },
     { id: "workflows", label: "Workflows" },
     { id: "env", label: "Environment Setup" },
+    { id: "devguide", label: "Developer Guide" },
+    { id: "changelog", label: "Changelog" },
   ];
 
   return (
     <div className="flex min-h-screen">
       <Sidebar />
       <div className="flex-1 flex flex-col">
-        <Header title="Documentation" subtitle="Complete reference for the WebShop Manager project" />
+        <Header title="Documentation" subtitle="Complete reference for the STEPv5 WC project" />
         <div className="flex flex-1">
 
           {/* TOC */}
@@ -125,17 +128,21 @@ export default async function DocsPage() {
                 </a>
               ))}
             </nav>
+            <div className="mt-4 pt-4" style={{ borderTop: "1px solid #edebe9" }}>
+              <DocsDownloadButton />
+            </div>
+
           </aside>
 
           {/* Content */}
-          <main className="flex-1 p-8 max-w-4xl space-y-10 overflow-y-auto">
+          <main className="flex-1 p-8 max-w-4xl space-y-10 overflow-y-auto" id="docs-content">
 
             {/* OVERVIEW */}
             <Section id="overview" title="Overview">
               <Card>
                 <CardContent className="py-4 space-y-3">
                   <p className="text-sm" style={{ color: "#323130" }}>
-                    <strong>WebShop Manager</strong> is a centralized multi-site WooCommerce product management tool.
+                    <strong>STEPv5 WC</strong> is a centralized multi-site WooCommerce product management tool.
                     It lets you create and manage products in one place, translate them into multiple languages,
                     then sync them out to multiple WooCommerce-powered WordPress sites via the WooCommerce REST API.
                   </p>
@@ -172,7 +179,9 @@ export default async function DocsPage() {
                       ["Passwords", "bcryptjs", "—", "Password hashing"],
                       ["Validation", "Zod", "v3", "Schema validation on API inputs"],
                       ["WooCommerce", "REST API v3", "—", "Product push/pull to remote stores"],
-                      ["Translation", "LibreTranslate", "—", "Open-source machine translation API"],
+                      ["Translation", "LibreTranslate / MyMemory", "—", "Open-source machine translation API (configurable)"],
+                      ["MSSQL", "mssql (node-mssql)", "—", "External Microsoft SQL Server connection for product import"],
+                      ["Exchange Rates", "Frankfurter (ECB)", "—", "Free live currency rate API, proxied server-side"],
                       ["Build", "Turbopack", "—", "Fast dev bundler (Next.js built-in)"],
                       ["Scripts", "tsx", "—", "Run TypeScript seed scripts directly"],
                     ]}
@@ -210,19 +219,37 @@ export default async function DocsPage() {
 │   │   │   │   └── [id]/
 │   │   │   │       ├── route.ts          # GET, PUT, DELETE
 │   │   │   │       └── test/route.ts     # POST test connection
+│   │   │   ├── settings/
+│   │   │   │   ├── currency/
+│   │   │   │   │   ├── route.ts          # GET/POST saved currency rates
+│   │   │   │   │   └── live/route.ts     # GET live rate via Frankfurter proxy
+│   │   │   │   └── mssql/
+│   │   │   │       ├── route.ts          # GET/POST MSSQL connection config
+│   │   │   │       ├── test/route.ts     # POST test MSSQL connection
+│   │   │   │       ├── tables/route.ts   # GET list of MSSQL tables
+│   │   │   │       ├── columns/route.ts  # GET columns for a table
+│   │   │   │       ├── search/route.ts   # GET search rows in a table
+│   │   │   │       └── mappings/route.ts # GET/POST column→field mappings
 │   │   │   ├── setup/route.ts            # GET config, POST save
 │   │   │   └── upload/route.ts           # POST image upload
 │   │   ├── dashboard/page.tsx # Dashboard with stats + activity
 │   │   ├── docs/page.tsx      # This documentation page
 │   │   ├── products/
 │   │   │   ├── page.tsx       # Product list table
-│   │   │   ├── new/page.tsx   # Create product form
+│   │   │   ├── new/page.tsx   # Create product form + MSSQL import panel
 │   │   │   └── [id]/page.tsx  # Edit product (tabs)
 │   │   ├── sites/
 │   │   │   ├── page.tsx       # Site list table
 │   │   │   ├── new/page.tsx   # Create site form
 │   │   │   └── [id]/page.tsx  # Edit site form
-│   │   ├── setup/page.tsx     # App configuration
+│   │   ├── settings/
+│   │   │   ├── layout.tsx     # Settings shell with sub-navigation
+│   │   │   ├── page.tsx       # Settings index (redirects to /settings/database)
+│   │   │   ├── database/page.tsx    # MSSQL connection + column mapping
+│   │   │   ├── currency/page.tsx    # Currency exchange rates (manual + live fetch)
+│   │   │   ├── translation/page.tsx # LibreTranslate / translation config
+│   │   │   └── SettingsSubNav.tsx   # Tab navigation between settings pages
+│   │   ├── setup/page.tsx     # App configuration (legacy)
 │   │   ├── globals.css        # Global styles + Tailwind import
 │   │   ├── layout.tsx         # Root layout with SessionProvider
 │   │   └── providers.tsx      # NextAuth SessionProvider wrapper
@@ -235,11 +262,13 @@ export default async function DocsPage() {
 │   │       ├── Button.tsx     # Button variants
 │   │       ├── Card.tsx       # Card, CardHeader, CardContent, CardTitle
 │   │       ├── ImageUploader.tsx # Drag-and-drop image upload
-│   │       └── Input.tsx      # Input, Textarea, Select
+│   │       ├── Input.tsx      # Input, Textarea, Select
+│   │       └── VariationsEditor.tsx # Variable product variations UI
 │   ├── generated/
 │   │   └── prisma/            # Prisma generated client (gitignored)
 │   └── lib/
 │       ├── auth.ts            # NextAuth configuration
+│       ├── mssql.ts           # MSSQL singleton pool + query helpers
 │       ├── prisma.ts          # Prisma client singleton
 │       ├── translation.ts     # LibreTranslate integration
 │       └── woocommerce.ts     # WooCommerce REST API helpers
@@ -293,7 +322,7 @@ export default async function DocsPage() {
                     ]}
                   />
                   <p className="text-xs pt-1" style={{ color: "#605e5c" }}>
-                    Known keys: <Code>libreTranslateUrl</Code>, <Code>libreTranslateApiKey</Code>, <Code>defaultSourceLanguage</Code>, <Code>autoTranslate</Code>
+                    Known keys: <Code>libreTranslateUrl</Code>, <Code>libreTranslateApiKey</Code>, <Code>defaultSourceLanguage</Code>, <Code>autoTranslate</Code>, <Code>currencyRates</Code> (JSON array of rate objects)
                   </p>
                 </CardContent>
               </Card>
@@ -386,10 +415,55 @@ export default async function DocsPage() {
               </Card>
 
               <Card>
+                <CardHeader><CardTitle>MssqlConnection</CardTitle></CardHeader>
+                <CardContent className="py-4 space-y-2">
+                  <p className="text-xs" style={{ color: "#605e5c" }}>Stores a single MSSQL server connection configuration. Only one row is expected (findFirst pattern). Password stored as plaintext — keep the database file secure.</p>
+                  <Table
+                    headers={["Column", "Type", "Notes"]}
+                    rows={[
+                      [<Code key="id">id</Code>, "String (CUID)", "Primary key"],
+                      [<Code key="host">host</Code>, "String", 'MSSQL server hostname or IP. Default: ""'],
+                      [<Code key="port">port</Code>, "Int", "TCP port. Default: 1433"],
+                      [<Code key="database">database</Code>, "String", "Database name"],
+                      [<Code key="username">username</Code>, "String", "SQL login username"],
+                      [<Code key="password">password</Code>, "String", "SQL login password (plaintext)"],
+                      [<Code key="encrypt">encrypt</Code>, "Boolean", "Whether to encrypt the connection. Default: true"],
+                      [<Code key="trustCert">trustCert</Code>, "Boolean", "Trust self-signed certificates. Default: true"],
+                      [<Code key="createdAt">createdAt</Code>, "DateTime", "Auto-set on create"],
+                    ]}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle>MssqlTableMapping</CardTitle></CardHeader>
+                <CardContent className="py-4 space-y-2">
+                  <p className="text-xs" style={{ color: "#605e5c" }}>Stores the column→field mapping configuration per page. One row per page (e.g. <Code>products/new</Code>). Allows users to define which MSSQL column maps to which product field.</p>
+                  <Table
+                    headers={["Column", "Type", "Notes"]}
+                    rows={[
+                      [<Code key="id">id</Code>, "String (CUID)", "Primary key"],
+                      [<Code key="page">page</Code>, "String", "Unique page identifier e.g. products/new"],
+                      [<Code key="tableName">tableName</Code>, "String", "MSSQL table name to query"],
+                      [<Code key="searchColumn">searchColumn</Code>, "String", "Column to search/filter on"],
+                      [<Code key="displayColumns">displayColumns</Code>, "String", "JSON array of column names to show in results"],
+                      [<Code key="fieldMappings">fieldMappings</Code>, "String", 'JSON object mapping MSSQL columns to product fields e.g. {"Item Name":"title"}'],
+                      [<Code key="createdAt">createdAt</Code>, "DateTime", "Auto-set on create"],
+                    ]}
+                  />
+                  <p className="text-xs pt-1" style={{ color: "#605e5c" }}>Unique constraint: <Code>page</Code> — upserted when saving mapping configuration.</p>
+                </CardContent>
+              </Card>
+
+              <Card>
                 <CardHeader><CardTitle>Entity Relationship</CardTitle></CardHeader>
                 <CardContent className="py-4">
                   <CodeBlock>{`Product  ──< ProductSync >──  Site
 Product  ──< ProductTranslation
+
+MssqlConnection    (singleton — one row)
+MssqlTableMapping  (one per page slug, stores column→field map)
+AppConfig          (key-value — currencyRates, translation config)
 
 Cascade deletes:
   Delete Product  →  removes all ProductSync + ProductTranslation rows
@@ -435,6 +509,27 @@ Cascade deletes:
                   ],
                 },
                 {
+                  group: "Settings — Currency",
+                  routes: [
+                    { method: "GET", path: "/api/settings/currency", desc: "Read saved currency rates from AppConfig (key: currencyRates). Returns { rates: [{from, to, rate, fetchedAt?}] }." },
+                    { method: "POST", path: "/api/settings/currency", desc: "Save currency rate array to AppConfig. Body: { rates: Rate[] }." },
+                    { method: "GET", path: "/api/settings/currency/live", desc: "Proxy to Frankfurter (ECB) API. Params: ?from=EUR&to=USD. Returns { from, to, rate }. Server-side cached for 1 hour. Currency codes must be valid 3-letter ISO codes." },
+                  ],
+                },
+                {
+                  group: "Settings — MSSQL",
+                  routes: [
+                    { method: "GET", path: "/api/settings/mssql", desc: "Read saved MSSQL connection config from MssqlConnection table (findFirst). Returns connection fields or empty defaults if not configured." },
+                    { method: "POST", path: "/api/settings/mssql", desc: "Save MSSQL connection config (upsert). Calls invalidatePool() to force pool recreation on next use. Body: { host, port, database, username, password, encrypt, trustCert }." },
+                    { method: "POST", path: "/api/settings/mssql/test", desc: "Test MSSQL credentials by opening a one-off connection (does not use the singleton pool). Returns { success, message }." },
+                    { method: "GET", path: "/api/settings/mssql/tables", desc: "List all BASE TABLE names in the connected MSSQL database via INFORMATION_SCHEMA.TABLES." },
+                    { method: "GET", path: "/api/settings/mssql/columns", desc: "List column names for a given table. Params: ?table=TableName. Uses INFORMATION_SCHEMA.COLUMNS ordered by ORDINAL_POSITION." },
+                    { method: "GET", path: "/api/settings/mssql/search", desc: "Search rows in a table. Params: ?table=&column=&q=&limit=. Uses LIKE %q% on the column. Column/table names are bracket-quoted to support spaces. Returns rows as JSON array." },
+                    { method: "GET", path: "/api/settings/mssql/mappings", desc: "Read MssqlTableMapping for a given page. Params: ?page=products/new. Returns { tableName, searchColumn, displayColumns, fieldMappings } or null." },
+                    { method: "POST", path: "/api/settings/mssql/mappings", desc: "Save MssqlTableMapping for a page (upsert by page). Body: { page, tableName, searchColumn, displayColumns, fieldMappings }." },
+                  ],
+                },
+                {
                   group: "Upload",
                   routes: [
                     { method: "POST", path: "/api/upload", desc: "Upload a product image. Accepts multipart/form-data with file field. Validates type (JPEG/PNG/WebP/GIF) and size (≤5MB). Saves to public/uploads/ with UUID filename. Returns { url: '/uploads/filename.ext' }." },
@@ -472,9 +567,12 @@ Cascade deletes:
                       [<Code key="/sites/new">/sites/new</Code>, <Badge key="c2" color="blue">Client</Badge>, "Form to create a new site. Fields: name, URL, consumer key/secret, language, status."],
                       [<Code key="/sites/id">/sites/[id]</Code>, <Badge key="c3" color="blue">Client</Badge>, "Edit site form. Includes Test Connection button that pings the WooCommerce REST API."],
                       [<Code key="/products">/products</Code>, <Badge key="c4" color="blue">Client</Badge>, "Searchable/filterable product table with sync status and live site links."],
-                      [<Code key="/products/new">/products/new</Code>, <Badge key="c5" color="blue">Client</Badge>, "Create product form. Includes image uploader and website selection for immediate sync."],
+                      [<Code key="/products/new">/products/new</Code>, <Badge key="c5" color="blue">Client</Badge>, "Create product form. Includes image uploader and website selection for immediate sync. Right panel: MSSQL import search with unmapped columns auto-fill."],
                       [<Code key="/products/id">/products/[id]</Code>, <Badge key="c6" color="blue">Client</Badge>, "Tabbed product editor: Details (edit fields), Translations (auto-translate), Sync (push to sites)."],
-                      [<Code key="/setup">/setup</Code>, <Badge key="c7" color="blue">Client</Badge>, "Configure LibreTranslate URL, API key, source language, and auto-translate toggle."],
+                      [<Code key="/settings/database">/settings/database</Code>, <Badge key="c8" color="blue">Client</Badge>, "Configure MSSQL connection (host, port, database, credentials, encrypt). Test connection. Define column→field mapping per page including search column and display columns."],
+                      [<Code key="/settings/currency">/settings/currency</Code>, <Badge key="c9" color="blue">Client</Badge>, "Manage currency exchange rates. Add/remove from→to pairs. Fetch live rates per-row or all at once from Frankfurter (ECB). Rates are saved to AppConfig."],
+                      [<Code key="/settings/translation">/settings/translation</Code>, <Badge key="c10" color="blue">Client</Badge>, "Configure LibreTranslate URL, API key, source language, and auto-translate toggle."],
+                      [<Code key="/setup">/setup</Code>, <Badge key="c7" color="blue">Client</Badge>, "Legacy app configuration page (same as /settings/translation)."],
                       [<Code key="/docs">/docs</Code>, <Badge key="s3" color="green">Server</Badge>, "This documentation page."],
                     ]}
                   />
@@ -540,6 +638,19 @@ Cascade deletes:
                   file: "lib/auth.ts",
                   title: "NextAuth Configuration",
                   desc: "Configures NextAuth with the Credentials provider. On sign-in, looks up User by email, compares password with bcrypt. Session strategy is JWT. Exposes authOptions for use in API routes via getServerSession().",
+                },
+                {
+                  file: "lib/mssql.ts",
+                  title: "MSSQL Singleton Pool",
+                  desc: [
+                    "getPool(cfg) — returns a reusable mssql.ConnectionPool stored on globalThis. Reuses the existing pool if the config key (host:port/database/username) matches and the pool is connected. Closes and recreates the pool if config changes. Pool settings: max 10 connections, 60s idle timeout.",
+                    "invalidatePool() — closes the current pool and clears it from globalThis. Called automatically after saving new MSSQL credentials so the next query uses fresh config.",
+                    "createMssqlPool(cfg) — opens a one-off connection for credential testing only. Not suitable for repeated queries.",
+                    "listTables(cfg) — queries INFORMATION_SCHEMA.TABLES for all BASE TABLE names.",
+                    "listColumns(cfg, tableName) — queries INFORMATION_SCHEMA.COLUMNS for a table, ordered by ORDINAL_POSITION.",
+                    "searchTable(cfg, tableName, searchColumn, query, limit) — LIKE search using parameterized inputs. Column and table names are sanitized (allow letters, digits, underscore, spaces) and bracket-quoted in SQL to safely support column names with spaces (e.g. [Item Name]).",
+                    "getRowByValue(cfg, tableName, searchColumn, value) — returns the first row where the column exactly equals the value.",
+                  ],
                 },
                 {
                   file: "lib/prisma.ts",
@@ -664,6 +775,50 @@ Cascade deletes:
               </Card>
 
               <Card>
+                <CardHeader><CardTitle>Importing a product from MSSQL</CardTitle></CardHeader>
+                <CardContent className="py-4">
+                  <ol className="space-y-2 text-sm" style={{ color: "#605e5c" }}>
+                    {[
+                      "Go to Settings → Database and enter your MSSQL server credentials, then click Test Connection",
+                      "Select the table and search column to use for product lookup, configure any column→field mappings, then save",
+                      "Go to Products → Add Product — the Import from Database search bar appears at the top",
+                      "Type a search term — results are fetched via GET /api/settings/mssql/search with debounce",
+                      "Select a result row — auto-mapped fields (title, price, sku, etc.) fill in automatically based on saved fieldMappings",
+                      "The right-side Unmapped DB Columns panel shows all remaining columns from the selected row",
+                      "Use the per-row dropdown to manually apply any unmapped column value to a product field",
+                      "Complete remaining fields and click Create Product",
+                    ].map((step, i) => (
+                      <li key={i} className="flex gap-3">
+                        <span className="w-5 h-5 shrink-0 flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: "#0078d4" }}>{i + 1}</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle>Setting up live currency rates</CardTitle></CardHeader>
+                <CardContent className="py-4">
+                  <ol className="space-y-2 text-sm" style={{ color: "#605e5c" }}>
+                    {[
+                      "Go to Settings → Currency",
+                      "Click Common Pairs to load EUR/USD, EUR/GBP, USD/EUR, GBP/EUR defaults — or click Add Rate to define custom pairs",
+                      "Click Fetch Live Rates to auto-fill all rows with live ECB rates from Frankfurter API (proxied server-side)",
+                      "Alternatively, click the per-row refresh icon (↺) to update a single pair",
+                      "Rows with live rates show a green 'live' badge next to the rate field and a last-synced timestamp in the header",
+                      "Click Save Rates — rates are stored as JSON in AppConfig under the key currencyRates",
+                    ].map((step, i) => (
+                      <li key={i} className="flex gap-3">
+                        <span className="w-5 h-5 shrink-0 flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: "#0078d4" }}>{i + 1}</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </CardContent>
+              </Card>
+
+              <Card>
                 <CardHeader><CardTitle>Sync flow (internal)</CardTitle></CardHeader>
                 <CardContent className="py-4">
                   <CodeBlock>{`POST /api/products/[id]/sync  { siteIds: ["abc", "def"] }
@@ -724,6 +879,533 @@ npm run dev`}
                   </SubSection>
                 </CardContent>
               </Card>
+            </Section>
+
+            {/* DEVELOPER GUIDE */}
+            <Section id="devguide" title="Developer Guide">
+
+              {/* Adding a page */}
+              <SubSection title="Adding a new page">
+                <Card>
+                  <CardContent className="py-4 space-y-3">
+                    <p className="text-sm" style={{ color: "#605e5c" }}>
+                      All pages live under <Code>src/app/</Code>. Every page exports a default React component from a <Code>page.tsx</Code> file.
+                      Pages that need data on load use server components; interactive pages use <Code>&quot;use client&quot;</Code>.
+                    </p>
+
+                    <SubSection title="1. Create the file">
+                      <CodeBlock>{`// src/app/reports/page.tsx
+"use client";
+
+import { Sidebar } from "@/components/layout/Sidebar";
+import { Header } from "@/components/layout/Header";
+
+export default function ReportsPage() {
+  return (
+    <div className="flex min-h-screen">
+      <Sidebar />
+      <div className="flex-1 flex flex-col">
+        <Header title="Reports" subtitle="View analytics and reports" />
+        <main className="flex-1 p-6">
+          {/* page content */}
+        </main>
+      </div>
+    </div>
+  );
+}`}
+                      </CodeBlock>
+                    </SubSection>
+
+                    <SubSection title="2. Add to the sidebar nav">
+                      <p className="text-sm mb-2" style={{ color: "#605e5c" }}>
+                        Open <Code>src/components/layout/Sidebar.tsx</Code> and add an entry to the <Code>navItems</Code> array:
+                      </p>
+                      <CodeBlock>{`// src/components/layout/Sidebar.tsx
+import { BarChart2 } from "lucide-react";  // import an icon
+
+const navItems = [
+  // ... existing items
+  { href: "/reports", label: "Reports", icon: BarChart2 },
+];`}
+                      </CodeBlock>
+                      <p className="text-xs mt-2" style={{ color: "#a19f9d" }}>
+                        Active state is detected automatically: any path that starts with the item&apos;s <Code>href</Code> gets the blue left border highlight.
+                      </p>
+                    </SubSection>
+
+                    <SubSection title="Server component page (no interactivity)">
+                      <p className="text-sm mb-2" style={{ color: "#605e5c" }}>
+                        If the page only displays data and needs no client-side state, skip <Code>&quot;use client&quot;</Code> and fetch data directly:
+                      </p>
+                      <CodeBlock>{`// src/app/reports/page.tsx  (no "use client")
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+
+export default async function ReportsPage() {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+
+  const products = await prisma.product.findMany();
+
+  return (
+    <div className="flex min-h-screen">
+      {/* ... layout ... */}
+      <main>{products.map(p => <div key={p.id}>{p.title}</div>)}</main>
+    </div>
+  );
+}`}
+                      </CodeBlock>
+                    </SubSection>
+                  </CardContent>
+                </Card>
+              </SubSection>
+
+              {/* Form management */}
+              <SubSection title="Managing forms">
+                <Card>
+                  <CardContent className="py-4 space-y-3">
+                    <p className="text-sm" style={{ color: "#605e5c" }}>
+                      All forms follow the same pattern: one state object for all fields, a single <Code>update(key, value)</Code> helper, a <Code>saving</Code> boolean, and an <Code>error</Code> string.
+                    </p>
+                    <CodeBlock>{`"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+
+export default function MyFormPage() {
+  const router = useRouter();
+  const [form, setForm] = useState({ name: "", email: "" });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  // Single updater — keeps the form object flat and predictable
+  function update(key: string, value: string) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+
+    const res = await fetch("/api/my-resource", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+
+    setSaving(false);
+    if (res.ok) {
+      router.push("/my-resource");       // redirect on success
+    } else {
+      const data = await res.json();
+      setError(data.error || "Something went wrong");
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Input
+        label="Name"
+        value={form.name}
+        onChange={(e) => update("name", e.target.value)}
+        required
+      />
+      <Input
+        label="Email"
+        type="email"
+        value={form.email}
+        onChange={(e) => update("email", e.target.value)}
+      />
+
+      {error && (
+        <div className="p-3 text-sm" style={{ backgroundColor: "#fde7e9", color: "#a4262c", border: "1px solid #a4262c" }}>
+          {error}
+        </div>
+      )}
+
+      <Button type="submit" loading={saving}>Save</Button>
+    </form>
+  );
+}`}
+                    </CodeBlock>
+                    <p className="text-xs" style={{ color: "#a19f9d" }}>
+                      The <Code>Button</Code> component accepts a <Code>loading</Code> prop — it shows a spinner and disables the button automatically when true.
+                    </p>
+                  </CardContent>
+                </Card>
+              </SubSection>
+
+              {/* Adding an API route */}
+              <SubSection title="Adding an API route">
+                <Card>
+                  <CardContent className="py-4 space-y-3">
+                    <p className="text-sm" style={{ color: "#605e5c" }}>
+                      API routes live under <Code>src/app/api/</Code>. Each folder has a <Code>route.ts</Code> that exports named functions: <Code>GET</Code>, <Code>POST</Code>, <Code>PUT</Code>, <Code>DELETE</Code>.
+                      Every route must check the session first.
+                    </p>
+                    <CodeBlock>{`// src/app/api/reports/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { z } from "zod";
+
+// Zod schema — validates and types the request body in one step
+const createSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  type:  z.enum(["sales", "inventory"]),
+});
+
+// GET — list resources
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const reports = await prisma.report.findMany({ orderBy: { createdAt: "desc" } });
+  return NextResponse.json(reports);
+}
+
+// POST — create a resource
+export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = await req.json();
+  const result = createSchema.safeParse(body);
+
+  if (!result.success) {
+    return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
+  }
+
+  const report = await prisma.report.create({ data: result.data });
+  return NextResponse.json(report, { status: 201 });
+}`}
+                    </CodeBlock>
+
+                    <SubSection title="Dynamic routes [id]">
+                      <CodeBlock>{`// src/app/api/reports/[id]/route.ts
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  const report = await prisma.report.findUnique({ where: { id } });
+  if (!report) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  return NextResponse.json(report);
+}
+
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  await prisma.report.delete({ where: { id } });
+  return NextResponse.json({ success: true });
+}`}
+                      </CodeBlock>
+                    </SubSection>
+                  </CardContent>
+                </Card>
+              </SubSection>
+
+              {/* Database operations */}
+              <SubSection title="Database operations (Prisma)">
+                <Card>
+                  <CardContent className="py-4 space-y-3">
+                    <p className="text-sm" style={{ color: "#605e5c" }}>
+                      Import the Prisma singleton from <Code>@/lib/prisma</Code>. Never instantiate <Code>PrismaClient</Code> directly in a route — that causes connection pool exhaustion during hot-reload.
+                    </p>
+                    <CodeBlock>{`import { prisma } from "@/lib/prisma";
+
+// CREATE
+const product = await prisma.product.create({
+  data: { title: "My Product", price: "9.99", status: "draft" },
+});
+
+// READ — single record
+const product = await prisma.product.findUnique({ where: { id } });
+
+// READ — list with filters
+const products = await prisma.product.findMany({
+  where: {
+    AND: [
+      search ? { title: { contains: search } } : {},
+      status ? { status } : {},
+    ],
+  },
+  orderBy: { createdAt: "desc" },
+  include: { syncs: true },          // join related records
+});
+
+// UPDATE
+await prisma.product.update({
+  where: { id },
+  data: { title: "Updated Title" },
+});
+
+// UPSERT — create if not exists, update if exists
+await prisma.appConfig.upsert({
+  where:  { key: "myKey" },
+  update: { value: "new value" },
+  create: { key: "myKey", value: "new value" },
+});
+
+// DELETE
+await prisma.product.delete({ where: { id } });`}
+                    </CodeBlock>
+
+                    <SubSection title="Adding a new model">
+                      <p className="text-sm mb-2" style={{ color: "#605e5c" }}>
+                        Edit <Code>prisma/schema.prisma</Code>, then run two commands to apply and regenerate the client:
+                      </p>
+                      <CodeBlock>{`// 1. Add to prisma/schema.prisma
+model Report {
+  id        String   @id @default(cuid())
+  title     String
+  type      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 2. Apply to the database (creates the table)
+npx prisma db push
+
+// 3. Regenerate the TypeScript client
+npx prisma generate`}
+                      </CodeBlock>
+                      <p className="text-xs mt-1" style={{ color: "#a19f9d" }}>
+                        Use <Code>npx prisma studio</Code> to browse and edit data in a GUI during development.
+                      </p>
+                    </SubSection>
+                  </CardContent>
+                </Card>
+              </SubSection>
+
+              {/* Adding a settings sub-page */}
+              <SubSection title="Adding a settings sub-page">
+                <Card>
+                  <CardContent className="py-4 space-y-3">
+                    <p className="text-sm" style={{ color: "#605e5c" }}>
+                      The <Code>/settings</Code> section has its own layout with a tab sub-nav. To add a new tab:
+                    </p>
+                    <SubSection title="1. Add the tab to SettingsSubNav">
+                      <CodeBlock>{`// src/app/settings/SettingsSubNav.tsx
+const TABS = [
+  { href: "/settings/database",    label: "Database" },
+  { href: "/settings/currency",    label: "Currency" },
+  { href: "/settings/translation", label: "Translation" },
+  { href: "/settings/myfeature",   label: "My Feature" },  // ← add here
+];`}
+                      </CodeBlock>
+                    </SubSection>
+                    <SubSection title="2. Create the page file">
+                      <CodeBlock>{`// src/app/settings/myfeature/page.tsx
+"use client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+
+export default function MyFeaturePage() {
+  return (
+    <form className="max-w-xl space-y-4">
+      <Card>
+        <CardHeader><CardTitle>My Feature</CardTitle></CardHeader>
+        <CardContent className="py-4">
+          {/* settings form */}
+        </CardContent>
+      </Card>
+    </form>
+  );
+}`}
+                      </CodeBlock>
+                      <p className="text-xs mt-1" style={{ color: "#a19f9d" }}>
+                        The settings layout (<Code>src/app/settings/layout.tsx</Code>) wraps all pages with the Sidebar, Header, and SettingsSubNav automatically. Your page only needs to return the inner content.
+                      </p>
+                    </SubSection>
+                  </CardContent>
+                </Card>
+              </SubSection>
+
+              {/* UI patterns */}
+              <SubSection title="UI & styling patterns">
+                <Card>
+                  <CardContent className="py-4 space-y-3">
+                    <p className="text-sm" style={{ color: "#605e5c" }}>
+                      All styling uses Tailwind utility classes plus inline <Code>style</Code> props for brand colours. Hover states on interactive elements use <Code>onMouseEnter</Code> / <Code>onMouseLeave</Code> with inline style mutation (Tailwind hover variants don&apos;t work with dynamic inline colours).
+                    </p>
+
+                    <SubSection title="Hover states">
+                      <CodeBlock>{`<button
+  style={{ color: "#605e5c" }}
+  onMouseEnter={(e) => {
+    (e.currentTarget as HTMLElement).style.color = "#a4262c";
+    (e.currentTarget as HTMLElement).style.backgroundColor = "#fde7e9";
+  }}
+  onMouseLeave={(e) => {
+    (e.currentTarget as HTMLElement).style.color = "#605e5c";
+    (e.currentTarget as HTMLElement).style.backgroundColor = "";
+  }}
+>
+  Delete
+</button>`}
+                      </CodeBlock>
+                    </SubSection>
+
+                    <SubSection title="Colour palette">
+                      <Table
+                        headers={["Token", "Hex", "Usage"]}
+                        rows={[
+                          ["Primary blue", "#0078d4", "Links, active states, primary buttons"],
+                          ["Dark text", "#323130", "Headings, primary labels"],
+                          ["Body text", "#605e5c", "Paragraphs, table cells"],
+                          ["Muted text", "#a19f9d", "Hints, placeholders, timestamps"],
+                          ["Border", "#edebe9", "Card borders, dividers"],
+                          ["Surface", "#f3f2f1", "Table headers, code backgrounds"],
+                          ["Sidebar bg", "#1b1b1b", "Left navigation background"],
+                          ["Success green", "#107c10", "Success badges, live indicators"],
+                          ["Error red", "#a4262c", "Error text, danger buttons"],
+                          ["Warning yellow", "#8a6914", "Warning badges"],
+                        ]}
+                      />
+                    </SubSection>
+
+                    <SubSection title="Loading / error / saved states">
+                      <CodeBlock>{`const [loading, setLoading] = useState(true);
+const [saving, setSaving]  = useState(false);
+const [saved,  setSaved]   = useState(false);
+const [error,  setError]   = useState("");
+
+// Show spinner while loading initial data
+if (loading) return <div className="text-xs" style={{ color: "#605e5c" }}>Loading...</div>;
+
+// Error banner
+{error && (
+  <div className="p-2.5 text-xs" style={{ backgroundColor: "#fde7e9", border: "1px solid #a4262c", color: "#a4262c" }}>
+    {error}
+  </div>
+)}
+
+// Success banner (auto-dismisses after 3s)
+{saved && (
+  <div className="p-2.5 text-xs" style={{ backgroundColor: "#dff6dd", border: "1px solid #107c10", color: "#107c10" }}>
+    Saved successfully!
+  </div>
+)}
+// After save: setSaved(true); setTimeout(() => setSaved(false), 3000);`}
+                      </CodeBlock>
+                    </SubSection>
+
+                    <SubSection title="Card layout">
+                      <CodeBlock>{`import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+
+<Card>
+  <CardHeader>
+    <CardTitle>Section Title</CardTitle>
+  </CardHeader>
+  <CardContent className="py-4 space-y-4">
+    {/* content */}
+  </CardContent>
+</Card>`}
+                      </CodeBlock>
+                    </SubSection>
+                  </CardContent>
+                </Card>
+              </SubSection>
+
+              {/* Adding a feature end-to-end */}
+              <SubSection title="Adding a feature end-to-end (checklist)">
+                <Card>
+                  <CardContent className="py-4">
+                    <ol className="space-y-2 text-sm" style={{ color: "#605e5c" }}>
+                      {[
+                        "Define the data shape — add a model to prisma/schema.prisma if you need a new table, then run npx prisma db push && npx prisma generate.",
+                        "Create the API route(s) under src/app/api/your-feature/route.ts. Add GET for reading, POST for creating, PUT/DELETE for updates. Always check session first. Validate body with Zod.",
+                        "Create the page under src/app/your-feature/page.tsx. Use 'use client' if the page has state or form interactions. Use the Sidebar + Header layout shell.",
+                        "Add a nav item to Sidebar.tsx navItems array with an appropriate Lucide icon and href.",
+                        "If it's a settings sub-page, add the tab to SettingsSubNav.tsx instead and place the file under src/app/settings/your-feature/page.tsx.",
+                        "Fetch data on load with useEffect → fetch('/api/your-feature'). Store in useState. Show loading state while fetching.",
+                        "Build the form using the Input / Select / Button UI components. Use the single-object form state pattern with an update() helper.",
+                        "Handle API errors by checking res.ok and reading data.error from the JSON response. Display in an error banner.",
+                        "After a successful save, either redirect with router.push() or show a timed 'Saved!' banner (setSaved(true); setTimeout(..., 3000)).",
+                        "Update the documentation page (src/app/docs/page.tsx) — add the new route to the API Reference table, the page to the Pages table, and the lib module if applicable. Add a changelog entry.",
+                      ].map((step, i) => (
+                        <li key={i} className="flex gap-3">
+                          <span className="w-5 h-5 shrink-0 flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: "#0078d4" }}>{i + 1}</span>
+                          <span>{step}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </CardContent>
+                </Card>
+              </SubSection>
+
+            </Section>
+
+            {/* CHANGELOG */}
+            <Section id="changelog" title="Changelog">
+              {[
+                {
+                  version: "MSSQL Product Import",
+                  date: "Apr 6, 2026",
+                  changes: [
+                    "Added lib/mssql.ts — singleton connection pool using globalThis (mirrors Prisma pattern). Prevents connection churn on debounced search.",
+                    "New MssqlConnection Prisma model stores server credentials (host, port, database, username, password, encrypt, trustCert).",
+                    "New MssqlTableMapping Prisma model stores per-page column→field mappings and search configuration.",
+                    "Added /settings/database page — configure MSSQL connection, test it, and define column-to-field mapping with search column selection.",
+                    "Added /api/settings/mssql/* routes — GET/POST config, test connection, list tables, list columns, search rows, get/save mappings.",
+                    "Products → Add Product now features a full-width Import from Database search bar with debounced live search.",
+                    "Selecting a search result auto-fills mapped product fields. A sticky 40%-width right panel shows all unmapped columns with per-row dropdowns to manually apply values.",
+                    "Fixed column name sanitization: regex updated to allow spaces (/[^a-zA-Z0-9_\\s]/g). Column names bracket-quoted in SQL ([Item Name]) to support MSSQL columns with spaces.",
+                    "Fixed empty search results: guard requires both tableName and searchColumn to be non-empty before firing search.",
+                    "invalidatePool() called automatically after saving MSSQL credentials so next query uses fresh config.",
+                  ],
+                },
+                {
+                  version: "Currency Exchange Rates",
+                  date: "Apr 6, 2026",
+                  changes: [
+                    "Added /settings/currency page — manage from→to exchange rate pairs.",
+                    "Fetch Live Rates button calls all rows in parallel via server-side proxy to Frankfurter (ECB) API — no API key required.",
+                    "Per-row refresh button (↺) updates a single pair without affecting others.",
+                    "Common Pairs shortcut loads EUR/USD, EUR/GBP, USD/EUR, GBP/EUR as starting pairs.",
+                    "Live-fetched rows show a green 'live' badge inline (not absolutely positioned) to avoid overlap with adjacent rows.",
+                    "Last synced timestamp displayed in card header after bulk fetch.",
+                    "Rates persisted as JSON in AppConfig under key currencyRates.",
+                    "Added /api/settings/currency/live — server-side proxy to Frankfurter API with 1-hour revalidate cache. Validates currency codes as 3-letter ISO. Avoids client-side CORS issues.",
+                  ],
+                },
+                {
+                  version: "Settings Sub-Navigation",
+                  date: "Apr 6, 2026",
+                  changes: [
+                    "Added /settings layout with SettingsSubNav.tsx tab bar (Database, Currency, Translation).",
+                    "Translation config moved from /setup to /settings/translation for consistency.",
+                    "/setup retained as legacy entry point.",
+                  ],
+                },
+              ].map((entry) => (
+                <Card key={entry.version}>
+                  <CardHeader>
+                    <div className="flex items-baseline gap-3">
+                      <CardTitle>{entry.version}</CardTitle>
+                      <span className="text-xs" style={{ color: "#a19f9d" }}>{entry.date}</span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="py-3">
+                    <ul className="space-y-1.5">
+                      {entry.changes.map((c, i) => (
+                        <li key={i} className="text-sm flex gap-2" style={{ color: "#605e5c" }}>
+                          <span style={{ color: "#107c10" }}>+</span>
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              ))}
             </Section>
 
           </main>

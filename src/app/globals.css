@@ -4,4 +4,12 @@ body {
   font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
   background-color: #f3f2f1;
   color: #323130;
+  overflow-x: hidden;
+}
+
+/* Compact main padding on mobile */
+@media (max-width: 767px) {
+  main {
+    padding: 0.75rem !important;
+  }
 }

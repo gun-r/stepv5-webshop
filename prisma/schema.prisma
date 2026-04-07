@@ -4,17 +4,54 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
+  id             String        @id @default(cuid())
+  email          String        @unique
+  password       String
+  name           String
+  role           String        @default("user")
+  roleId         String?
+  username       String?
+  address        String?
+  country        String?
+  zip            String?
+  telephone      String?
+  mobile         String?
+  position       String?
+  positionNote   String?
+  teamLeader     String?
+  dateStarted    String?
+  employeeStatus String?
+  motto          String?
+  notes          String?
+  avatarUrl      String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  userRole       UserRole?     @relation(fields: [roleId], references: [id])
+  activities     ActivityLog[]
+}
+
+model UserRole {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  label       String
+  permissions String   @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       User[]
+}
+
+model ActivityLog {
   id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      String   @default("admin")
+  userId    String
+  action    String
+  details   String?
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AppConfig {
@@ -30,7 +67,10 @@ model Site {
   url             String
   consumerKey     String
   consumerSecret  String
+  wpUsername      String?
+  wpAppPassword   String?
   defaultLanguage String        @default("en")
+  currency        String        @default("EUR")
   status          String        @default("active")
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -38,33 +78,65 @@ model Site {
 }
 
 model Product {
-  id           String               @id @default(cuid())
-  title        String
-  description  String?
-  price        String               @default("0")
-  salePrice    String?
-  sku          String?
-  images       String               @default("[]")
-  categories   String               @default("[]")
-  tags         String               @default("[]")
-  status       String               @default("draft")
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  syncs        ProductSync[]
-  translations ProductTranslation[]
+  id               String               @id @default(cuid())
+  title            String
+  description      String?
+  shortDescription String?
+  productType      String               @default("simple")
+  price            String               @default("0")
+  salePrice        String?
+  sku              String?
+  manageStock      Boolean              @default(false)
+  stockQuantity    Int?
+  images           String               @default("[]")
+  categories       String               @default("[]")
+  tags             String               @default("[]")
+  variations       String               @default("[]")
+  status           String               @default("draft")
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  syncs            ProductSync[]
+  translations     ProductTranslation[]
 }
 
 model ProductTranslation {
-  id          String   @id @default(cuid())
-  productId   String
-  language    String
-  title       String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  productId        String
+  language         String
+  title            String
+  shortDescription String?
+  description      String?
+  price            String?
+  salePrice        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, language])
+}
+
+model MssqlConnection {
+  id        String   @id @default(cuid())
+  host      String   @default("")
+  port      Int      @default(1433)
+  database  String   @default("")
+  username  String   @default("")
+  password  String   @default("")
+  encrypt   Boolean  @default(true)
+  trustCert Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MssqlTableMapping {
+  id             String   @id @default(cuid())
+  page           String   @unique
+  tableName      String
+  searchColumn   String
+  displayColumns String   @default("[]")
+  fieldMappings  String   @default("{}")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model ProductSync {

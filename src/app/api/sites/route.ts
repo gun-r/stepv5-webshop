@@ -9,7 +9,10 @@ const siteSchema = z.object({
   url: z.string().url("Must be a valid URL"),
   consumerKey: z.string().min(1, "Consumer key is required"),
   consumerSecret: z.string().min(1, "Consumer secret is required"),
+  wpUsername: z.string().optional(),
+  wpAppPassword: z.string().optional(),
   defaultLanguage: z.string().default("en"),
+  currency: z.string().default("EUR"),
   status: z.enum(["active", "inactive"]).default("active"),
 });
 

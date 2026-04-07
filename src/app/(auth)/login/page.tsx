@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, Lock, Mail } from "lucide-react";
+import { Lock, Mail } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,10 +37,10 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 mb-4" style={{ backgroundColor: "#0078d4" }}>
-            <ShoppingCart className="w-7 h-7 text-white" />
+          <div className="inline-flex items-center justify-center w-14 h-14 mb-4">
+            <img src="/logo.png" alt="STEPv5 WC Logo" width={56} height={56} className="object-contain" />
           </div>
-          <h1 className="text-xl font-semibold text-white">WebShop Manager</h1>
+          <h1 className="text-xl font-semibold text-white">STEPv5 WC</h1>
           <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.45)" }}>
             Multi-site WooCommerce Management
           </p>

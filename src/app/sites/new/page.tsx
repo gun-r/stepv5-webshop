@@ -31,6 +31,8 @@ export default function NewSitePage() {
     url: "",
     consumerKey: "",
     consumerSecret: "",
+    wpUsername: "",
+    wpAppPassword: "",
     defaultLanguage: "en",
     status: "active",
   });
@@ -117,6 +119,32 @@ export default function NewSitePage() {
                   required
                   placeholder="cs_xxxxxxxxxxxxxxxxxxxx"
                   hint="WooCommerce REST API consumer secret"
+                />
+
+                <div className="pt-2 pb-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>
+                    WordPress Media Upload (for product images)
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: "#a19f9d" }}>
+                    Required to upload images directly to the WordPress media library.
+                    Generate an Application Password in WordPress under Users › Profile › Application Passwords.
+                  </p>
+                </div>
+
+                <Input
+                  label="WP Username"
+                  value={form.wpUsername}
+                  onChange={(e) => update("wpUsername", e.target.value)}
+                  placeholder="your-wp-username (optional)"
+                />
+
+                <Input
+                  label="WP Application Password"
+                  type="password"
+                  value={form.wpAppPassword}
+                  onChange={(e) => update("wpAppPassword", e.target.value)}
+                  placeholder="xxxx xxxx xxxx xxxx xxxx xxxx (optional)"
+                  hint="WordPress Application Password — not your login password"
                 />
 
                 <Select
