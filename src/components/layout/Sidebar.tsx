@@ -10,6 +10,7 @@ import {
   BookOpen,
   Users,
   Activity,
+  Images,
 } from "lucide-react";
 import { useMobileSidebar } from "./MobileSidebarContext";
 
@@ -17,6 +18,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/sites", label: "Sites", icon: Globe },
   { href: "/products", label: "Products", icon: Package },
+  { href: "/images", label: "Images", icon: Images },
   { href: "/users", label: "Users", icon: Users },
   { href: "/activity", label: "Activity", icon: Activity },
   { href: "/settings", label: "Settings", icon: Settings },

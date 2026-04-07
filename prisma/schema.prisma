@@ -154,3 +154,28 @@ model ProductSync {
 
   @@unique([productId, siteId])
 }
+
+model ImageCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  images      Image[]
+}
+
+model Image {
+  id         String         @id @default(cuid())
+  filename   String
+  url        String
+  alt        String?
+  size       Int?
+  mimeType   String?
+  width      Int?
+  height     Int?
+  categoryId String?
+  category   ImageCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+}

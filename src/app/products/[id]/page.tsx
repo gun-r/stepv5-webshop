@@ -8,7 +8,7 @@ import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
-import { ImageUploader } from "@/components/ui/ImageUploader";
+import { ImagePicker } from "@/components/ui/ImagePicker";
 import { VariationsEditor, VariationsData } from "@/components/ui/VariationsEditor";
 import { Badge, SyncStatusBadge } from "@/components/ui/Badge";
 import {
@@ -544,7 +544,7 @@ export default function EditProductPage() {
                         </div>
                       )}
                       <Input label="SKU" value={form.sku} onChange={(e) => update("sku", e.target.value)} placeholder="PROD-001" />
-                      <ImageUploader images={images} onChange={setImages} />
+                      <ImagePicker images={images} onChange={setImages} />
                       <Input label="Categories" value={form.categories} onChange={(e) => update("categories", e.target.value)} placeholder="Electronics, Gadgets" hint="Comma-separated — synced to WooCommerce" />
                       <Input label="Tags" value={form.tags} onChange={(e) => update("tags", e.target.value)} placeholder="new, sale" hint="Comma-separated — synced to WooCommerce" />
                       <Select label="Status" value={form.status} onChange={(e) => update("status", e.target.value)}>

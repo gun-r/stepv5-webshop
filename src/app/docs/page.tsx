@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { DocsDownloadButton } from "@/components/ui/DocsDownloadButton";
+import { ArchitecturePreview } from "@/components/ui/ArchitecturePreview";
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
@@ -26,14 +27,26 @@ function SubSection({ title, children }: { title: string; children: React.ReactN
   );
 }
 
+const COL_WIDTHS: Record<number, Record<number, string>> = {
+  3: { 0: "22%", 1: "18%", 2: "60%" },
+  4: { 0: "18%", 1: "14%", 2: "14%", 3: "54%" },
+  2: { 0: "30%", 1: "70%" },
+};
+
 function Table({ headers, rows }: { headers: string[]; rows: (string | React.ReactNode)[][] }) {
+  const widths = COL_WIDTHS[headers.length] ?? {};
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm border-collapse">
+        <colgroup>
+          {headers.map((_, i) => (
+            <col key={i} style={{ width: widths[i] ?? "auto" }} />
+          ))}
+        </colgroup>
         <thead>
-          <tr style={{ backgroundColor: "#f3f2f1", borderBottom: "1px solid #edebe9" }}>
+          <tr style={{ backgroundColor: "#f3f2f1", borderBottom: "2px solid #edebe9" }}>
             {headers.map((h) => (
-              <th key={h} className="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>
+              <th key={h} className="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c", whiteSpace: "nowrap" }}>
                 {h}
               </th>
             ))}
@@ -41,9 +54,9 @@ function Table({ headers, rows }: { headers: string[]; rows: (string | React.Rea
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} style={{ borderBottom: "1px solid #f3f2f1" }}>
+            <tr key={i} style={{ borderBottom: "1px solid #f3f2f1", backgroundColor: i % 2 === 1 ? "#faf9f8" : "#fff" }}>
               {row.map((cell, j) => (
-                <td key={j} className="px-3 py-2 text-sm align-top" style={{ color: j === 0 ? "#323130" : "#605e5c" }}>
+                <td key={j} className="px-3 py-2 text-sm align-top" style={{ color: j === 0 ? "#323130" : "#605e5c", wordBreak: "break-word" }}>
                   {cell}
                 </td>
               ))}
@@ -92,6 +105,7 @@ export default async function DocsPage() {
 
   const toc = [
     { id: "overview", label: "Overview" },
+    { id: "architecture", label: "Architecture" },
     { id: "stack", label: "Tech Stack" },
     { id: "file-structure", label: "File Structure" },
     { id: "database", label: "Database Schema" },
@@ -162,6 +176,30 @@ export default async function DocsPage() {
               </Card>
             </Section>
 
+            {/* ARCHITECTURE */}
+            <Section id="architecture" title="Architecture">
+              <Card>
+                <CardContent className="py-4 space-y-3">
+                  <p className="text-sm" style={{ color: "#605e5c" }}>
+                    End-to-end integration overview — from the legacy MSSQL database (STEPv4) through the STEPv5 management app to the live WooCommerce storefronts.
+                  </p>
+                  <ArchitecturePreview />
+                  <div className="grid grid-cols-3 gap-3 pt-1">
+                    {[
+                      { color: "#d13438", label: "MSSQL (STEPv4)", desc: "Live search for employees and products via configurable table mappings" },
+                      { color: "#0078d4", label: "STEPv5 App", desc: "Next.js management layer — products, users, sites, sync, settings" },
+                      { color: "#7719aa", label: "WooCommerce Sites", desc: "Multiple storefronts synced via WC REST API with per-site credentials" },
+                    ].map((f) => (
+                      <div key={f.label} className="p-3" style={{ border: `1px solid ${f.color}22`, backgroundColor: `${f.color}08` }}>
+                        <p className="text-sm font-semibold" style={{ color: f.color }}>{f.label}</p>
+                        <p className="text-xs mt-1" style={{ color: "#605e5c" }}>{f.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </Section>
+
             {/* TECH STACK */}
             <Section id="stack" title="Tech Stack">
               <Card>
@@ -174,7 +212,7 @@ export default async function DocsPage() {
                       ["Styling", "Tailwind CSS", "v4", "Utility-first CSS framework"],
                       ["Icons", "Lucide React", "0.462", "Icon components"],
                       ["ORM", "Prisma", "6", "Database access, schema management, migrations"],
-                      ["Database", "SQLite", "—", "Local file-based relational database"],
+                      ["Database", "PostgreSQL", "16+", "Relational database — local (Postgres.app) or remote (Simply.com)"],
                       ["Auth", "NextAuth.js", "v4", "Session management, credentials login"],
                       ["Passwords", "bcryptjs", "—", "Password hashing"],
                       ["Validation", "Zod", "v3", "Schema validation on API inputs"],
@@ -197,17 +235,24 @@ export default async function DocsPage() {
                 <CardContent className="py-4">
                   <CodeBlock>{`stepv5-webshop/
 ├── prisma/
-│   ├── schema.prisma          # Database schema definition
+│   ├── schema.prisma          # Database schema (PostgreSQL provider)
 │   ├── seed.ts                # Database seed script
-│   └── dev.db                 # SQLite database file (gitignored)
+│   └── migrate-from-sqlite.ts # One-time data migration helper
 ├── public/
-│   └── uploads/               # Uploaded product images (gitignored)
+│   ├── architecture.svg       # System architecture diagram
+│   └── uploads/               # Uploaded images (gitignored)
 ├── src/
 │   ├── app/                   # Next.js App Router
 │   │   ├── (auth)/
 │   │   │   └── login/page.tsx # Login page
 │   │   ├── api/               # API route handlers
 │   │   │   ├── auth/[...nextauth]/route.ts
+│   │   │   ├── images/
+│   │   │   │   ├── route.ts              # GET list, POST create image record
+│   │   │   │   ├── [id]/route.ts         # GET, PUT, DELETE image
+│   │   │   │   └── categories/
+│   │   │   │       ├── route.ts          # GET list, POST create category
+│   │   │   │       └── [id]/route.ts     # PUT, DELETE category
 │   │   │   ├── products/
 │   │   │   │   ├── route.ts              # GET list, POST create
 │   │   │   │   └── [id]/
@@ -234,6 +279,8 @@ export default async function DocsPage() {
 │   │   │   └── upload/route.ts           # POST image upload
 │   │   ├── dashboard/page.tsx # Dashboard with stats + activity
 │   │   ├── docs/page.tsx      # This documentation page
+│   │   ├── images/
+│   │   │   └── page.tsx       # Image library (gallery + categories)
 │   │   ├── products/
 │   │   │   ├── page.tsx       # Product list table
 │   │   │   ├── new/page.tsx   # Create product form + MSSQL import panel
@@ -258,10 +305,12 @@ export default async function DocsPage() {
 │   │   │   ├── Sidebar.tsx    # Left nav with active state
 │   │   │   └── Header.tsx     # Top bar with user + sign out
 │   │   └── ui/
+│   │       ├── ArchitecturePreview.tsx # Lightbox for architecture SVG
 │   │       ├── Badge.tsx      # Status badges + SyncStatusBadge
 │   │       ├── Button.tsx     # Button variants
 │   │       ├── Card.tsx       # Card, CardHeader, CardContent, CardTitle
-│   │       ├── ImageUploader.tsx # Drag-and-drop image upload
+│   │       ├── ImagePicker.tsx # Image library modal (Library + Upload tabs)
+│   │       ├── ImageUploader.tsx # Simple drag-and-drop upload (legacy)
 │   │       ├── Input.tsx      # Input, Textarea, Select
 │   │       └── VariationsEditor.tsx # Variable product variations UI
 │   ├── generated/
@@ -286,7 +335,8 @@ export default async function DocsPage() {
             {/* DATABASE SCHEMA */}
             <Section id="database" title="Database Schema">
               <p className="text-sm" style={{ color: "#605e5c" }}>
-                SQLite database managed by Prisma 6. File located at <Code>prisma/dev.db</Code>.
+                PostgreSQL database managed by Prisma 6. Local database: <Code>stepv5_webshop</Code> via Postgres.app.
+                Live database: <Code>sal_tech_com_db_stepv5_mwa</Code> on <Code>pgsql1.simply.com</Code>.
                 All IDs are CUID strings generated by Prisma.
               </p>
 
@@ -351,7 +401,7 @@ export default async function DocsPage() {
               <Card>
                 <CardHeader><CardTitle>Product</CardTitle></CardHeader>
                 <CardContent className="py-4 space-y-2">
-                  <p className="text-xs" style={{ color: "#605e5c" }}>The central product record. Images, categories, and tags are stored as JSON strings (arrays) since SQLite has no native array type.</p>
+                  <p className="text-xs" style={{ color: "#605e5c" }}>The central product record. Images, categories, and tags are stored as JSON strings (arrays) for portability across database providers.</p>
                   <Table
                     headers={["Column", "Type", "Notes"]}
                     rows={[
@@ -456,18 +506,62 @@ export default async function DocsPage() {
               </Card>
 
               <Card>
+                <CardHeader><CardTitle>ImageCategory</CardTitle></CardHeader>
+                <CardContent className="py-4 space-y-2">
+                  <p className="text-xs" style={{ color: "#605e5c" }}>Organizes images into named groups. Images can be filtered by category in both the library page and the ImagePicker modal.</p>
+                  <Table
+                    headers={["Column", "Type", "Notes"]}
+                    rows={[
+                      [<Code key="id">id</Code>, "String (CUID)", "Primary key"],
+                      [<Code key="name">name</Code>, "String", "Unique category name"],
+                      [<Code key="slug">slug</Code>, "String", "Unique URL-safe slug derived from name"],
+                      [<Code key="description">description</Code>, "String?", "Optional description"],
+                      [<Code key="createdAt">createdAt</Code>, "DateTime", "Auto-set on create"],
+                      [<Code key="updatedAt">updatedAt</Code>, "DateTime", "Auto-updated"],
+                    ]}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle>Image</CardTitle></CardHeader>
+                <CardContent className="py-4 space-y-2">
+                  <p className="text-xs" style={{ color: "#605e5c" }}>Tracks every uploaded image file. Created automatically when a file is uploaded via <Code>/api/upload</Code>. Images are stored in <Code>public/uploads/</Code> with UUID filenames.</p>
+                  <Table
+                    headers={["Column", "Type", "Notes"]}
+                    rows={[
+                      [<Code key="id">id</Code>, "String (CUID)", "Primary key"],
+                      [<Code key="filename">filename</Code>, "String", "Original filename from the upload"],
+                      [<Code key="url">url</Code>, "String", 'Public URL path e.g. "/uploads/abc.jpg"'],
+                      [<Code key="alt">alt</Code>, "String?", "Alt text for accessibility / SEO"],
+                      [<Code key="size">size</Code>, "Int?", "File size in bytes"],
+                      [<Code key="mimeType">mimeType</Code>, "String?", 'MIME type e.g. "image/jpeg"'],
+                      [<Code key="width">width</Code>, "Int?", "Image width in pixels (if detected)"],
+                      [<Code key="height">height</Code>, "Int?", "Image height in pixels (if detected)"],
+                      [<Code key="categoryId">categoryId</Code>, "String?", "FK → ImageCategory (SetNull on delete)"],
+                      [<Code key="createdAt">createdAt</Code>, "DateTime", "Auto-set on create"],
+                      [<Code key="updatedAt">updatedAt</Code>, "DateTime", "Auto-updated"],
+                    ]}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
                 <CardHeader><CardTitle>Entity Relationship</CardTitle></CardHeader>
                 <CardContent className="py-4">
                   <CodeBlock>{`Product  ──< ProductSync >──  Site
 Product  ──< ProductTranslation
+
+ImageCategory  ──< Image   (SetNull on category delete)
 
 MssqlConnection    (singleton — one row)
 MssqlTableMapping  (one per page slug, stores column→field map)
 AppConfig          (key-value — currencyRates, translation config)
 
 Cascade deletes:
-  Delete Product  →  removes all ProductSync + ProductTranslation rows
-  Delete Site     →  removes all ProductSync rows for that site`}
+  Delete Product       →  removes all ProductSync + ProductTranslation rows
+  Delete Site          →  removes all ProductSync rows for that site
+  Delete ImageCategory →  sets Image.categoryId = NULL (images kept)`}
                   </CodeBlock>
                 </CardContent>
               </Card>
@@ -530,9 +624,23 @@ Cascade deletes:
                   ],
                 },
                 {
+                  group: "Images",
+                  routes: [
+                    { method: "GET", path: "/api/images", desc: "List all images. Supports ?search= (filename or alt contains) and ?categoryId= filter. Pass categoryId=uncategorized to get images with no category. Includes category relation." },
+                    { method: "POST", path: "/api/images", desc: "Create an image record manually. Body: { filename, url, alt?, size?, mimeType?, categoryId? }. Usually called indirectly via /api/upload." },
+                    { method: "GET", path: "/api/images/[id]", desc: "Get a single image record with category." },
+                    { method: "PUT", path: "/api/images/[id]", desc: "Update image metadata. Body: { alt?, categoryId? }. Used from the Images library detail panel." },
+                    { method: "DELETE", path: "/api/images/[id]", desc: "Delete image record and remove the file from public/uploads/ (if URL starts with /uploads/)." },
+                    { method: "GET", path: "/api/images/categories", desc: "List all image categories ordered by name. Includes _count.images for each category." },
+                    { method: "POST", path: "/api/images/categories", desc: "Create a category. Body: { name, description? }. Auto-generates slug from name. Returns 409 if name/slug already exists." },
+                    { method: "PUT", path: "/api/images/categories/[id]", desc: "Update a category name or description. Regenerates slug from new name." },
+                    { method: "DELETE", path: "/api/images/categories/[id]", desc: "Delete a category. Images in that category have their categoryId set to NULL (SetNull behaviour)." },
+                  ],
+                },
+                {
                   group: "Upload",
                   routes: [
-                    { method: "POST", path: "/api/upload", desc: "Upload a product image. Accepts multipart/form-data with file field. Validates type (JPEG/PNG/WebP/GIF) and size (≤5MB). Saves to public/uploads/ with UUID filename. Returns { url: '/uploads/filename.ext' }." },
+                    { method: "POST", path: "/api/upload", desc: "Upload an image file. Accepts multipart/form-data: file (required), categoryId (optional), alt (optional), saveToLibrary (pass 'false' to skip DB record). Validates type (JPEG/PNG/WebP/GIF) and size (≤5MB). Saves to public/uploads/ with UUID filename. Creates an Image record by default. Returns { url, image? }." },
                   ],
                 },
               ].map((group) => (
@@ -566,9 +674,10 @@ Cascade deletes:
                       [<Code key="/sites">/sites</Code>, <Badge key="s2" color="green">Server</Badge>, "Table of all WooCommerce sites with status, sync count, and external link."],
                       [<Code key="/sites/new">/sites/new</Code>, <Badge key="c2" color="blue">Client</Badge>, "Form to create a new site. Fields: name, URL, consumer key/secret, language, status."],
                       [<Code key="/sites/id">/sites/[id]</Code>, <Badge key="c3" color="blue">Client</Badge>, "Edit site form. Includes Test Connection button that pings the WooCommerce REST API."],
+                      [<Code key="/images">/images</Code>, <Badge key="c-img" color="blue">Client</Badge>, "Image library. Category sidebar (create/rename/delete), search bar, upload zone (drag-and-drop or click), image grid. Select image to edit alt text, category, copy URL, or delete."],
                       [<Code key="/products">/products</Code>, <Badge key="c4" color="blue">Client</Badge>, "Searchable/filterable product table with sync status and live site links."],
-                      [<Code key="/products/new">/products/new</Code>, <Badge key="c5" color="blue">Client</Badge>, "Create product form. Includes image uploader and website selection for immediate sync. Right panel: MSSQL import search with unmapped columns auto-fill."],
-                      [<Code key="/products/id">/products/[id]</Code>, <Badge key="c6" color="blue">Client</Badge>, "Tabbed product editor: Details (edit fields), Translations (auto-translate), Sync (push to sites)."],
+                      [<Code key="/products/new">/products/new</Code>, <Badge key="c5" color="blue">Client</Badge>, "Create product form. Includes ImagePicker (browse library or upload) and website selection for immediate sync. Right panel: MSSQL import search with unmapped columns auto-fill."],
+                      [<Code key="/products/id">/products/[id]</Code>, <Badge key="c6" color="blue">Client</Badge>, "Tabbed product editor: Details (edit fields, manage images via ImagePicker), Translations (auto-translate), Sync (push to sites)."],
                       [<Code key="/settings/database">/settings/database</Code>, <Badge key="c8" color="blue">Client</Badge>, "Configure MSSQL connection (host, port, database, credentials, encrypt). Test connection. Define column→field mapping per page including search column and display columns."],
                       [<Code key="/settings/currency">/settings/currency</Code>, <Badge key="c9" color="blue">Client</Badge>, "Manage currency exchange rates. Add/remove from→to pairs. Fetch live rates per-row or all at once from Frankfurter (ECB). Rates are saved to AppConfig."],
                       [<Code key="/settings/translation">/settings/translation</Code>, <Badge key="c10" color="blue">Client</Badge>, "Configure LibreTranslate URL, API key, source language, and auto-translate toggle."],
@@ -614,9 +723,19 @@ Cascade deletes:
                   desc: "Badge renders a colored label pill. Variants: success (green), warning (yellow), danger (red), info (blue), default (gray). SyncStatusBadge maps 'synced'→success, 'pending'→warning, 'failed'→danger.",
                 },
                 {
-                  name: "ImageUploader",
+                  name: "ImagePicker",
+                  path: "components/ui/ImagePicker.tsx",
+                  desc: "Modal image selector with two tabs — Library (browse and multi-select from the image library with category filter + search) and Upload New (drag-and-drop or file picker, assigns category + alt, saves to library). Apply Selection inserts chosen URLs into the product's images array. Used in products/new and products/[id]. Controlled: receives images[] + onChange().",
+                },
+                {
+                  name: "ArchitecturePreview",
+                  path: "components/ui/ArchitecturePreview.tsx",
+                  desc: "Client component that renders the architecture SVG with a hover zoom hint and opens a fullscreen lightbox on click. Used in the docs page Architecture section. Backdrop click closes the lightbox.",
+                },
+                {
+                  name: "ImageUploader (legacy)",
                   path: "components/ui/ImageUploader.tsx",
-                  desc: "Drag-and-drop + click-to-upload zone. Uploads files one at a time to POST /api/upload. Shows upload spinner. Preview grid of uploaded images with hover ×-button to remove. Controlled: receives images[] + onChange().",
+                  desc: "Simple drag-and-drop + click-to-upload zone. Uploads directly to POST /api/upload without library integration. Superseded by ImagePicker in product pages.",
                 },
               ].map((c) => (
                 <Card key={c.name}>
@@ -819,6 +938,29 @@ Cascade deletes:
               </Card>
 
               <Card>
+                <CardHeader><CardTitle>Uploading and using images</CardTitle></CardHeader>
+                <CardContent className="py-4">
+                  <ol className="space-y-2 text-sm" style={{ color: "#605e5c" }}>
+                    {[
+                      "Go to Images in the sidebar to open the image library",
+                      "Create categories first (e.g. 'Products', 'Banners') using the + button in the category sidebar",
+                      "Select a category then drag-and-drop files onto the page or click Upload — images are saved to public/uploads/ and registered in the Image table",
+                      "Click any image to open the detail panel — edit alt text, change category, copy the URL, or delete the file",
+                      "When editing a product, click the 'Add images from library or upload' button to open the ImagePicker modal",
+                      "In the Library tab: filter by category, search, and click images to select/deselect them. Click Apply Selection to attach them to the product",
+                      "In the Upload New tab: drag files or pick from disk, assign a category and alt text, then click Upload — files are saved to the library and immediately added to the product",
+                      "Images uploaded from a product page appear in the Images library and can be reused across other products",
+                    ].map((step, i) => (
+                      <li key={i} className="flex gap-3">
+                        <span className="w-5 h-5 shrink-0 flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: "#0078d4" }}>{i + 1}</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </CardContent>
+              </Card>
+
+              <Card>
                 <CardHeader><CardTitle>Sync flow (internal)</CardTitle></CardHeader>
                 <CardContent className="py-4">
                   <CodeBlock>{`POST /api/products/[id]/sync  { siteIds: ["abc", "def"] }
@@ -845,24 +987,28 @@ For each siteId:
                 <CardHeader><CardTitle>Required environment variables</CardTitle></CardHeader>
                 <CardContent className="py-4 space-y-4">
                   <p className="text-sm" style={{ color: "#605e5c" }}>Create a <Code>.env.local</Code> file in the project root:</p>
-                  <CodeBlock>{`# Database — must be absolute path for Prisma + SQLite
-DATABASE_URL="file:/absolute/path/to/stepv5-webshop/prisma/dev.db"
+                  <CodeBlock>{`# Database — PostgreSQL connection string
+# Local (Postgres.app on macOS):
+DATABASE_URL="postgresql://<your-mac-username>@localhost:5432/stepv5_webshop"
 
-# NextAuth — any long random string
+# Live (Simply.com):
+# DATABASE_URL="postgresql://sal_tech_com:<password>@pgsql1.simply.com:5432/sal_tech_com_db_stepv5_mwa"
+
+# NextAuth — generate with: openssl rand -base64 32
 NEXTAUTH_SECRET="your-secret-key-here"
 
-# NextAuth URL — your local dev URL
+# NextAuth URL — your local dev URL or production URL
 NEXTAUTH_URL="http://localhost:3000"`}
                   </CodeBlock>
                   <SubSection title="First-time setup commands">
                     <CodeBlock>{`# Install dependencies
 npm install
 
-# Generate Prisma client
-npx prisma generate
+# Create the PostgreSQL database (local — run in psql or Postgres.app)
+# CREATE DATABASE stepv5_webshop;
 
-# Create database tables
-npx prisma db push
+# Generate Prisma client + push schema to DB
+DATABASE_URL="postgresql://..." npx prisma db push
 
 # Seed the database (creates admin user)
 npx tsx prisma/seed.ts
@@ -1347,6 +1493,23 @@ if (loading) return <div className="text-xs" style={{ color: "#605e5c" }}>Loadin
             {/* CHANGELOG */}
             <Section id="changelog" title="Changelog">
               {[
+                {
+                  version: "Image Management & PostgreSQL Migration",
+                  date: "Apr 7, 2026",
+                  changes: [
+                    "Migrated database from SQLite to PostgreSQL. Local: Postgres.app (stepv5_webshop). Live: Simply.com (sal_tech_com_db_stepv5_mwa on pgsql1.simply.com). Prisma schema updated to provider='postgresql'.",
+                    "Added ImageCategory model — id, name (unique), slug (unique), description, timestamps. Supports create/rename/delete via /api/images/categories routes.",
+                    "Added Image model — id, filename, url, alt, size, mimeType, width, height, categoryId (FK → ImageCategory, SetNull on delete), timestamps.",
+                    "Added /images gallery page — category sidebar with counts, search bar, drag-and-drop upload zone, image grid. Right detail panel shows alt text editor, category selector, copy URL, and delete buttons.",
+                    "Added /api/images/* routes — full CRUD for images (GET list with search/category filter, POST create, PUT update metadata, DELETE removes DB record + disk file).",
+                    "Added /api/images/categories/* routes — GET list with image counts, POST create, PUT update, DELETE (images set to uncategorized).",
+                    "Updated /api/upload — now creates an Image record in DB on every upload by default. Accepts optional alt, categoryId, saveToLibrary form fields. Added mkdir recursive + try/catch for reliable error reporting.",
+                    "Created ImagePicker component — modal with Library tab (browse, filter by category, multi-select) and Upload New tab (drag/drop, category assignment, alt text). Replaces ImageUploader in products/new and products/[id].",
+                    "Created ArchitecturePreview component — client component wrapping the architecture SVG with hover zoom hint and click-to-expand fullscreen lightbox.",
+                    "Added Images nav item to Sidebar between Products and Users.",
+                    "build script in package.json updated to 'prisma generate && next build' so Vercel regenerates the Prisma client before building.",
+                  ],
+                },
                 {
                   version: "MSSQL Product Import",
                   date: "Apr 6, 2026",

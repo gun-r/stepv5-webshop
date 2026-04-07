@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 720" font-family="Segoe UI, Arial, sans-serif">
+
+  <!-- Background -->
+  <rect width="1060" height="720" fill="#f8f9fa"/>
+
+  <!-- Title -->
+  <text x="530" y="36" text-anchor="middle" font-size="19" font-weight="bold" fill="#0078d4">STEPv5 WC — System Integration Overview</text>
+  <line x1="60" y1="46" x2="1000" y2="46" stroke="#0078d4" stroke-width="1.5"/>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- LEFT COLUMN: MSSQL STEPv4                            -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <rect x="30" y="62" width="210" height="330" rx="10" fill="#fff" stroke="#d13438" stroke-width="1.5"/>
+  <rect x="30" y="62" width="210" height="42" rx="10" fill="#d13438"/>
+  <rect x="30" y="90" width="210" height="14" fill="#d13438"/>
+  <text x="135" y="83" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">MSSQL Server (STEPv4)</text>
+  <text x="135" y="98" text-anchor="middle" font-size="9" fill="#fde7e9">mssql14.unoeuro.com · Port 1433</text>
+
+  <rect x="48" y="116" width="174" height="44" rx="5" fill="#fde7e9" stroke="#d13438" stroke-width="1"/>
+  <text x="135" y="131" text-anchor="middle" font-size="10" font-weight="bold" fill="#d13438">Employee Table</text>
+  <text x="135" y="145" text-anchor="middle" font-size="8.5" fill="#605e5c">Username · Name · Email</text>
+  <text x="135" y="157" text-anchor="middle" font-size="8.5" fill="#605e5c">Position · Mobile · Address…</text>
+
+  <rect x="48" y="168" width="174" height="44" rx="5" fill="#fde7e9" stroke="#d13438" stroke-width="1"/>
+  <text x="135" y="183" text-anchor="middle" font-size="10" font-weight="bold" fill="#d13438">Product Table</text>
+  <text x="135" y="197" text-anchor="middle" font-size="8.5" fill="#605e5c">Item Name · SKU · Price</text>
+  <text x="135" y="209" text-anchor="middle" font-size="8.5" fill="#605e5c">Description · Stock Count…</text>
+
+  <rect x="48" y="220" width="174" height="34" rx="5" fill="#fde7e9" stroke="#d13438" stroke-width="1"/>
+  <text x="135" y="235" text-anchor="middle" font-size="10" font-weight="bold" fill="#d13438">Other Tables</text>
+  <text x="135" y="247" text-anchor="middle" font-size="8.5" fill="#605e5c">Orders · Customers · etc.</text>
+
+  <line x1="48" y1="266" x2="222" y2="266" stroke="#edebe9" stroke-width="1"/>
+  <text x="135" y="282" text-anchor="middle" font-size="8.5" fill="#a19f9d">Live read-only search</text>
+  <text x="135" y="296" text-anchor="middle" font-size="8.5" fill="#a19f9d">via configurable field mappings</text>
+  <text x="135" y="311" text-anchor="middle" font-size="8.5" fill="#605e5c">Encrypted · Trust Server Cert</text>
+  <text x="135" y="325" text-anchor="middle" font-size="8.5" fill="#605e5c">Connection pooled (max 10)</text>
+  <text x="135" y="342" text-anchor="middle" font-size="8" fill="#a19f9d">sal_tech_com_db_010621</text>
+  <text x="135" y="356" text-anchor="middle" font-size="8" fill="#a19f9d">User: sal_tech_com</text>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- CENTER: STEPv5 App                                   -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <rect x="310" y="62" width="420" height="540" rx="10" fill="#fff" stroke="#0078d4" stroke-width="2"/>
+  <rect x="310" y="62" width="420" height="42" rx="10" fill="#0078d4"/>
+  <rect x="310" y="90" width="420" height="14" fill="#0078d4"/>
+  <text x="520" y="83" text-anchor="middle" font-size="13" font-weight="bold" fill="#fff">STEPv5 WC — WebShop Management App</text>
+  <text x="520" y="98" text-anchor="middle" font-size="9" fill="#c7e0f4">Next.js 15 · Vercel · TypeScript · Tailwind CSS · NextAuth.js</text>
+
+  <rect x="326" y="116" width="186" height="72" rx="6" fill="#eff6fc" stroke="#0078d4" stroke-width="1"/>
+  <text x="419" y="133" text-anchor="middle" font-size="10" font-weight="bold" fill="#0078d4">👤 User Management</text>
+  <text x="419" y="148" text-anchor="middle" font-size="8.5" fill="#605e5c">Roles &amp; Custom Permissions</text>
+  <text x="419" y="161" text-anchor="middle" font-size="8.5" fill="#605e5c">Full Employee Profiles</text>
+  <text x="419" y="174" text-anchor="middle" font-size="8.5" fill="#605e5c">Activity Log · Avatar</text>
+
+  <rect x="524" y="116" width="186" height="72" rx="6" fill="#eff6fc" stroke="#0078d4" stroke-width="1"/>
+  <text x="617" y="133" text-anchor="middle" font-size="10" font-weight="bold" fill="#0078d4">📦 Product Manager</text>
+  <text x="617" y="148" text-anchor="middle" font-size="8.5" fill="#605e5c">Create · Edit · Image Upload</text>
+  <text x="617" y="161" text-anchor="middle" font-size="8.5" fill="#605e5c">Multi-language Translations</text>
+  <text x="617" y="174" text-anchor="middle" font-size="8.5" fill="#605e5c">Sync Status per Site</text>
+
+  <rect x="326" y="198" width="186" height="62" rx="6" fill="#eff6fc" stroke="#0078d4" stroke-width="1"/>
+  <text x="419" y="215" text-anchor="middle" font-size="10" font-weight="bold" fill="#0078d4">🌐 Site Manager</text>
+  <text x="419" y="230" text-anchor="middle" font-size="8.5" fill="#605e5c">WooCommerce Sites Registry</text>
+  <text x="419" y="243" text-anchor="middle" font-size="8.5" fill="#605e5c">API Keys · Language · Currency</text>
+  <text x="419" y="255" text-anchor="middle" font-size="8.5" fill="#605e5c">Active / Inactive toggle</text>
+
+  <rect x="524" y="198" width="186" height="62" rx="6" fill="#eff6fc" stroke="#0078d4" stroke-width="1"/>
+  <text x="617" y="215" text-anchor="middle" font-size="10" font-weight="bold" fill="#0078d4">⚙️ Settings</text>
+  <text x="617" y="230" text-anchor="middle" font-size="8.5" fill="#605e5c">MSSQL Connection Config</text>
+  <text x="617" y="243" text-anchor="middle" font-size="8.5" fill="#605e5c">Table Field Mappings per Page</text>
+  <text x="617" y="255" text-anchor="middle" font-size="8.5" fill="#605e5c">Currency Rates · Translation</text>
+
+  <line x1="326" y1="274" x2="714" y2="274" stroke="#edebe9" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="520" y="288" text-anchor="middle" font-size="9" fill="#a19f9d" font-style="italic">Next.js API Route Handlers</text>
+
+  <rect x="326" y="296" width="382" height="80" rx="6" fill="#f3f2f1" stroke="#c8c6c4" stroke-width="1"/>
+  <text x="342" y="313" font-size="8.5" fill="#605e5c">/api/users  ·  /api/users/[id]  ·  /api/activity</text>
+  <text x="342" y="328" font-size="8.5" fill="#605e5c">/api/products  ·  /api/products/[id]  ·  /api/products/[id]/sync</text>
+  <text x="342" y="343" font-size="8.5" fill="#605e5c">/api/sites  ·  /api/products/[id]/translate</text>
+  <text x="342" y="358" font-size="8.5" fill="#605e5c">/api/settings/mssql  ·  /api/settings/mssql/search  ·  /api/settings/currency</text>
+  <text x="342" y="370" font-size="8.5" fill="#605e5c">/api/auth  ·  /api/setup  ·  /api/uploads</text>
+
+  <rect x="326" y="388" width="182" height="56" rx="6" fill="#fff4ce" stroke="#f0c929" stroke-width="1"/>
+  <text x="417" y="406" text-anchor="middle" font-size="10" font-weight="bold" fill="#835b00">🔐 NextAuth.js v4</text>
+  <text x="417" y="421" text-anchor="middle" font-size="8.5" fill="#605e5c">Credentials Provider · JWT</text>
+  <text x="417" y="434" text-anchor="middle" font-size="8.5" fill="#605e5c">Session · Role-based Access</text>
+
+  <rect x="520" y="388" width="190" height="56" rx="6" fill="#fff4ce" stroke="#f0c929" stroke-width="1"/>
+  <text x="615" y="406" text-anchor="middle" font-size="10" font-weight="bold" fill="#835b00">🗄️ Prisma 6 ORM</text>
+  <text x="615" y="421" text-anchor="middle" font-size="8.5" fill="#605e5c">PostgreSQL driver · Type-safe</text>
+  <text x="615" y="434" text-anchor="middle" font-size="8.5" fill="#605e5c">CUID IDs · Cascade deletes</text>
+
+  <rect x="326" y="456" width="382" height="130" rx="6" fill="#f3f2f1" stroke="#c8c6c4" stroke-width="1"/>
+  <text x="517" y="473" text-anchor="middle" font-size="10" font-weight="bold" fill="#323130">Additional Modules</text>
+  <line x1="326" y1="479" x2="708" y2="479" stroke="#edebe9" stroke-width="1"/>
+  <text x="342" y="496" font-size="8.5" font-weight="bold" fill="#0078d4">📄 Documentation</text>
+  <text x="342" y="510" font-size="8" fill="#605e5c">Built-in docs · Export .doc / PDF</text>
+  <text x="342" y="523" font-size="8" fill="#605e5c">Word DOM walker · Tailwind PDF</text>
+  <text x="342" y="540" font-size="8.5" font-weight="bold" fill="#0078d4">💱 Currency Rates</text>
+  <text x="342" y="554" font-size="8" fill="#605e5c">Frankfurter (ECB) live rates</text>
+  <text x="342" y="567" font-size="8" fill="#605e5c">Stored in AppConfig as JSON</text>
+  <text x="530" y="496" font-size="8.5" font-weight="bold" fill="#0078d4">🌍 LibreTranslate</text>
+  <text x="530" y="510" font-size="8" fill="#605e5c">Auto-translate product fields</text>
+  <text x="530" y="523" font-size="8" fill="#605e5c">Configurable URL + API key</text>
+  <text x="530" y="540" font-size="8.5" font-weight="bold" fill="#0078d4">📊 Admin Dashboard</text>
+  <text x="530" y="554" font-size="8" fill="#605e5c">Activity feed · Stats overview</text>
+  <text x="530" y="567" font-size="8" fill="#605e5c">Quick actions · Recent syncs</text>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- RIGHT COLUMN: WooCommerce Sites                      -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <rect x="800" y="62" width="220" height="330" rx="10" fill="#fff" stroke="#7719aa" stroke-width="1.5"/>
+  <rect x="800" y="62" width="220" height="42" rx="10" fill="#7719aa"/>
+  <rect x="800" y="90" width="220" height="14" fill="#7719aa"/>
+  <text x="910" y="83" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">WooCommerce Sites</text>
+  <text x="910" y="98" text-anchor="middle" font-size="9" fill="#e1d5f0">WordPress + WC REST API v3</text>
+
+  <rect x="818" y="116" width="184" height="54" rx="5" fill="#f4f0fa" stroke="#7719aa" stroke-width="1"/>
+  <text x="910" y="133" text-anchor="middle" font-size="10" font-weight="bold" fill="#7719aa">🇩🇰 Sal-Tech DK</text>
+  <text x="910" y="148" text-anchor="middle" font-size="8.5" fill="#605e5c">sal-tech.dk · DKK · Danish (da)</text>
+  <text x="910" y="161" text-anchor="middle" font-size="8.5" fill="#a19f9d">Consumer Key / Secret auth</text>
+
+  <rect x="818" y="178" width="184" height="54" rx="5" fill="#f4f0fa" stroke="#7719aa" stroke-width="1"/>
+  <text x="910" y="195" text-anchor="middle" font-size="10" font-weight="bold" fill="#7719aa">🇪🇸 Sal-Tech ES</text>
+  <text x="910" y="210" text-anchor="middle" font-size="8.5" fill="#605e5c">woo.sal-tech.es · EUR · Spanish</text>
+  <text x="910" y="223" text-anchor="middle" font-size="8.5" fill="#a19f9d">Consumer Key / Secret auth</text>
+
+  <rect x="818" y="240" width="184" height="38" rx="5" fill="#faf9f8" stroke="#c8c6c4" stroke-width="1" stroke-dasharray="4"/>
+  <text x="910" y="257" text-anchor="middle" font-size="9.5" fill="#a19f9d">+ Add more sites…</text>
+  <text x="910" y="271" text-anchor="middle" font-size="8" fill="#a19f9d">via Site Manager page</text>
+
+  <line x1="818" y1="292" x2="1002" y2="292" stroke="#edebe9" stroke-width="1"/>
+  <text x="910" y="308" text-anchor="middle" font-size="8.5" fill="#a19f9d">Sync operations:</text>
+  <text x="910" y="323" text-anchor="middle" font-size="8.5" fill="#605e5c">Create / Update products</text>
+  <text x="910" y="337" text-anchor="middle" font-size="8.5" fill="#605e5c">Images · Stock · Price</text>
+  <text x="910" y="351" text-anchor="middle" font-size="8.5" fill="#605e5c">Per-language translations</text>
+  <text x="910" y="365" text-anchor="middle" font-size="8.5" fill="#605e5c">Sync status tracked in DB</text>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- BOTTOM: PostgreSQL                                   -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <rect x="340" y="624" width="380" height="82" rx="10" fill="#fff" stroke="#107c10" stroke-width="1.5"/>
+  <rect x="340" y="624" width="380" height="36" rx="10" fill="#107c10"/>
+  <rect x="340" y="646" width="380" height="14" fill="#107c10"/>
+  <text x="530" y="645" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">PostgreSQL — Simply.com</text>
+  <text x="530" y="660" text-anchor="middle" font-size="9" fill="#c8e6c9">pgsql1.simply.com · sal_tech_com_db_stepv5_mwa</text>
+  <text x="530" y="678" text-anchor="middle" font-size="8.5" fill="#605e5c">Users · Roles · Products · Sites · ProductSync · ProductTranslation</text>
+  <text x="530" y="693" text-anchor="middle" font-size="8.5" fill="#605e5c">AppConfig · MssqlConnection · MssqlTableMapping · ActivityLog</text>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- ARROWS                                               -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <line x1="241" y1="148" x2="308" y2="148" stroke="#d13438" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <rect x="244" y="134" width="62" height="13" rx="3" fill="#fde7e9"/>
+  <text x="275" y="144" text-anchor="middle" font-size="7.5" fill="#d13438">Employee search</text>
+
+  <line x1="241" y1="192" x2="308" y2="192" stroke="#d13438" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <rect x="244" y="178" width="62" height="13" rx="3" fill="#fde7e9"/>
+  <text x="275" y="188" text-anchor="middle" font-size="7.5" fill="#d13438">Product import</text>
+
+  <line x1="732" y1="152" x2="798" y2="152" stroke="#7719aa" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+  <rect x="735" y="138" width="62" height="13" rx="3" fill="#f4f0fa"/>
+  <text x="766" y="148" text-anchor="middle" font-size="7.5" fill="#7719aa">WC REST API</text>
+
+  <line x1="732" y1="210" x2="798" y2="210" stroke="#7719aa" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+  <rect x="735" y="196" width="62" height="13" rx="3" fill="#f4f0fa"/>
+  <text x="766" y="206" text-anchor="middle" font-size="7.5" fill="#7719aa">Product sync</text>
+
+  <line x1="520" y1="603" x2="520" y2="622" stroke="#107c10" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <rect x="432" y="603" width="176" height="14" rx="3" fill="#dff6dd"/>
+  <text x="520" y="613" text-anchor="middle" font-size="7.5" fill="#107c10">Prisma 6 ORM · Read / Write</text>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- LEGEND                                               -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <rect x="30" y="624" width="284" height="82" rx="8" fill="#fff" stroke="#c8c6c4" stroke-width="1"/>
+  <text x="46" y="642" font-size="9" font-weight="bold" fill="#323130">Legend</text>
+  <line x1="46" y1="658" x2="80" y2="658" stroke="#d13438" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <text x="87" y="662" font-size="8.5" fill="#605e5c">MSSQL live data search / import</text>
+  <line x1="46" y1="676" x2="80" y2="676" stroke="#7719aa" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+  <text x="87" y="680" font-size="8.5" fill="#605e5c">WooCommerce REST API push</text>
+  <line x1="46" y1="694" x2="80" y2="694" stroke="#107c10" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <text x="87" y="698" font-size="8.5" fill="#605e5c">PostgreSQL via Prisma ORM</text>
+
+  <defs>
+    <marker id="arrowRed" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#d13438"/>
+    </marker>
+    <marker id="arrowPurple" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#7719aa"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#107c10"/>
+    </marker>
+  </defs>
+
+</svg>
