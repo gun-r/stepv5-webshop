@@ -11,6 +11,7 @@ import {
   Users,
   Activity,
   Images,
+  BarChart2,
 } from "lucide-react";
 import { useMobileSidebar } from "./MobileSidebarContext";
 
@@ -19,6 +20,7 @@ const navItems = [
   { href: "/sites", label: "Sites", icon: Globe },
   { href: "/products", label: "Products", icon: Package },
   { href: "/images", label: "Images", icon: Images },
+  { href: "/analytics", label: "Analytics", icon: BarChart2 },
   { href: "/users", label: "Users", icon: Users },
   { href: "/activity", label: "Activity", icon: Activity },
   { href: "/settings", label: "Settings", icon: Settings },
