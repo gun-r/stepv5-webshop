@@ -7,19 +7,28 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json() as {
+    odooMode?: string;
     odooUrl?: string;
     odooDatabase?: string;
     odooUsername?: string;
     odooApiKey?: string;
+    odooOnlineSubdomain?: string;
   };
 
-  const { odooUrl, odooDatabase, odooUsername, odooApiKey } = body;
+  const { odooMode, odooUsername, odooApiKey } = body;
+  const isOnline = odooMode === "online";
 
-  if (!odooUrl || !odooDatabase || !odooUsername || !odooApiKey) {
+  const baseUrl = isOnline
+    ? `https://${body.odooOnlineSubdomain?.trim().replace(/\.odoo\.com$/, "")}.odoo.com`
+    : (body.odooUrl || "").replace(/\/$/, "");
+
+  const odooDatabase = isOnline
+    ? (body.odooOnlineSubdomain?.trim().replace(/\.odoo\.com$/, "") || "")
+    : (body.odooDatabase || "");
+
+  if (!baseUrl || !odooDatabase || !odooUsername || !odooApiKey) {
     return NextResponse.json({ error: "All fields are required to test the connection" }, { status: 400 });
   }
-
-  const baseUrl = odooUrl.replace(/\/$/, "");
 
   try {
     // Use Odoo JSON-RPC session authenticate endpoint

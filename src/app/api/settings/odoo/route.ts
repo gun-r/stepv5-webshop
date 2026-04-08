@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const KEYS = ["odooUrl", "odooDatabase", "odooUsername", "odooApiKey"] as const;
+const KEYS = ["odooMode", "odooUrl", "odooDatabase", "odooUsername", "odooApiKey", "odooOnlineSubdomain"] as const;
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -14,10 +14,12 @@ export async function GET() {
   for (const c of configs) map[c.key] = c.value;
 
   return NextResponse.json({
+    odooMode: map.odooMode || "onpremise",
     odooUrl: map.odooUrl || "",
     odooDatabase: map.odooDatabase || "",
     odooUsername: map.odooUsername || "",
     odooApiKey: map.odooApiKey || "",
+    odooOnlineSubdomain: map.odooOnlineSubdomain || "",
   });
 }
 
