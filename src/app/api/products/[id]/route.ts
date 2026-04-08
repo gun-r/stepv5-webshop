@@ -19,6 +19,7 @@ const updateSchema = z.object({
   images: z.string().optional(),
   categories: z.string().optional(),
   tags: z.string().optional(),
+  attributes: z.string().optional(),
   variations: z.string().optional(),
   status: z.enum(["draft", "published"]).optional(),
 });

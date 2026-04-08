@@ -9,12 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import { ImagePicker } from "@/components/ui/ImagePicker";
-import { VariationsEditor, VariationsData } from "@/components/ui/VariationsEditor";
 import { ArrowLeft, Save, Globe, Database, Search, X, CheckCircle, ChevronRight } from "lucide-react";
+import { ChipPicker } from "@/components/ui/ChipPicker";
+import { AttributesPicker, AttrOption, AttrSelection } from "@/components/ui/AttributesPicker";
 
 interface Site { id: string; name: string; url: string; status: string; }
-
-const EMPTY_VARIATIONS: VariationsData = { attributes: [], items: [] };
+interface CatOption { id: string; name: string; }
+interface TagOption { id: string; name: string; }
 
 interface DbMapping {
   tableName: string;
@@ -37,18 +38,21 @@ export default function NewProductPage() {
     title: "",
     description: "",
     shortDescription: "",
-    productType: "simple" as "simple" | "variable",
+    productType: "simple",
     price: "0",
     salePrice: "",
     sku: "",
-    categories: "",
-    tags: "",
     status: "draft",
     manageStock: false,
     stockQuantity: "",
   });
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedAttributes, setSelectedAttributes] = useState<AttrSelection[]>([]);
+  const [loadedCategories, setLoadedCategories] = useState<CatOption[]>([]);
+  const [loadedTags, setLoadedTags] = useState<TagOption[]>([]);
+  const [loadedAttributes, setLoadedAttributes] = useState<AttrOption[]>([]);
   const [images, setImages] = useState<string[]>([]);
-  const [variations, setVariations] = useState<VariationsData>(EMPTY_VARIATIONS);
   const [sites, setSites] = useState<Site[]>([]);
   const [selectedSites, setSelectedSites] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -74,6 +78,18 @@ export default function NewProductPage() {
       )
       .catch(() => {});
 
+    fetch("/api/products/categories").then((r) => r.json()).then((d) => {
+      if (Array.isArray(d)) setLoadedCategories(d.map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })));
+    }).catch(() => {});
+    fetch("/api/products/tags").then((r) => r.json()).then((d) => {
+      if (Array.isArray(d)) setLoadedTags(d.map((t: { id: string; name: string }) => ({ id: t.id, name: t.name })));
+    }).catch(() => {});
+    fetch("/api/products/attributes").then((r) => r.json()).then((d) => {
+      if (Array.isArray(d)) setLoadedAttributes(d as AttrOption[]);
+    }).catch(() => {});
+    // Load each attribute's terms
+    // (done lazily after attributes load, triggered by loadedAttributes effect below)
+
     // Load products page mapping
     fetch("/api/settings/mssql/mappings")
       .then((r) => r.json())
@@ -90,6 +106,17 @@ export default function NewProductPage() {
       })
       .catch(() => {});
   }, []);
+
+  // Load terms for each attribute
+  useEffect(() => {
+    if (loadedAttributes.length === 0) return;
+    Promise.all(
+      loadedAttributes.map((attr) =>
+        fetch(`/api/products/attributes/${attr.id}/terms`).then((r) => r.json()).then((terms) => ({ ...attr, terms: Array.isArray(terms) ? terms : [] }))
+      )
+    ).then((withTerms) => setLoadedAttributes(withTerms as AttrOption[]));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadedAttributes.length]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -143,6 +170,14 @@ export default function NewProductPage() {
       const val = row[dbCol];
       if (val == null) continue;
       const strVal = String(val);
+      if (field === "categories") {
+        setSelectedCategories(strVal.split(",").map((s) => s.trim()).filter(Boolean));
+        continue;
+      }
+      if (field === "tags") {
+        setSelectedTags(strVal.split(",").map((s) => s.trim()).filter(Boolean));
+        continue;
+      }
       if (PRODUCT_FIELDS.includes(field as typeof PRODUCT_FIELDS[number])) {
         (updates as Record<string, string>)[field] = strVal;
       }
@@ -188,12 +223,12 @@ export default function NewProductPage() {
     const payload = {
       ...form,
       images: JSON.stringify(images),
-      categories: JSON.stringify(form.categories.split(",").map((s) => s.trim()).filter(Boolean)),
-      tags: JSON.stringify(form.tags.split(",").map((s) => s.trim()).filter(Boolean)),
+      categories: JSON.stringify(selectedCategories),
+      tags: JSON.stringify(selectedTags),
+      attributes: JSON.stringify(selectedAttributes),
       salePrice: form.salePrice || undefined,
       sku: form.sku || undefined,
       stockQuantity: form.manageStock && form.stockQuantity ? parseInt(form.stockQuantity) : null,
-      variations: JSON.stringify(variations),
     };
 
     const res = await fetch("/api/products", {
@@ -333,34 +368,39 @@ export default function NewProductPage() {
             {/* LEFT — WooCommerce form (60%) */}
             <form onSubmit={handleSubmit} className="space-y-4" style={{ width: "60%" }}>
 
-              {/* Product Type */}
-              <Card>
-                <CardHeader><CardTitle>Product Type</CardTitle></CardHeader>
-                <CardContent>
-                  <Select label="Type" value={form.productType} onChange={(e) => update("productType", e.target.value as "simple" | "variable")}>
-                    <option value="simple">Simple Product</option>
-                    <option value="variable">Variable Product</option>
-                  </Select>
-                </CardContent>
-              </Card>
-
               {/* Product Information */}
               <Card>
                 <CardHeader><CardTitle>Product Information</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
                   <Input label="Title" value={form.title} onChange={(e) => update("title", e.target.value)} required placeholder="Product name" />
+                  <Select label="Product Type" value={form.productType} onChange={(e) => update("productType", e.target.value)}>
+                    <option value="simple">Simple Product</option>
+                    <option value="variable">Variable Product</option>
+                  </Select>
                   <Textarea label="Short Description" value={form.shortDescription} onChange={(e) => update("shortDescription", e.target.value)} rows={2} placeholder="Brief summary shown in product listings..." />
                   <Textarea label="Description" value={form.description} onChange={(e) => update("description", e.target.value)} rows={4} placeholder="Full product description..." />
-                  {form.productType === "simple" && (
-                    <div className="grid grid-cols-2 gap-3">
-                      <Input label="Regular Price" type="text" value={form.price} onChange={(e) => update("price", e.target.value)} placeholder="29.99" />
-                      <Input label="Sale Price" type="text" value={form.salePrice} onChange={(e) => update("salePrice", e.target.value)} placeholder="19.99 (optional)" />
-                    </div>
-                  )}
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input label="Regular Price" type="text" value={form.price} onChange={(e) => update("price", e.target.value)} placeholder="29.99" />
+                    <Input label="Sale Price" type="text" value={form.salePrice} onChange={(e) => update("salePrice", e.target.value)} placeholder="19.99 (optional)" />
+                  </div>
                   <Input label="SKU" value={form.sku} onChange={(e) => update("sku", e.target.value)} placeholder="PROD-001 (optional)" />
                   <ImagePicker images={images} onChange={setImages} />
-                  <Input label="Categories" value={form.categories} onChange={(e) => update("categories", e.target.value)} placeholder="Electronics, Gadgets" hint="Comma-separated" />
-                  <Input label="Tags" value={form.tags} onChange={(e) => update("tags", e.target.value)} placeholder="new, sale, featured" hint="Comma-separated" />
+                  <ChipPicker
+                    label="Categories"
+                    options={loadedCategories}
+                    selected={selectedCategories}
+                    onChange={setSelectedCategories}
+                    placeholder="Search categories…"
+                    hint="Synced to WooCommerce"
+                  />
+                  <ChipPicker
+                    label="Tags"
+                    options={loadedTags}
+                    selected={selectedTags}
+                    onChange={setSelectedTags}
+                    placeholder="Search tags…"
+                    hint="Synced to WooCommerce"
+                  />
                   <Select label="Status" value={form.status} onChange={(e) => update("status", e.target.value)}>
                     <option value="draft">Draft</option>
                     <option value="published">Published</option>
@@ -368,31 +408,33 @@ export default function NewProductPage() {
                 </CardContent>
               </Card>
 
-              {/* Inventory */}
-              {form.productType === "simple" && (
+              {/* Attributes — variable products only */}
+              {form.productType === "variable" && (
                 <Card>
-                  <CardHeader><CardTitle>Inventory</CardTitle></CardHeader>
-                  <CardContent className="space-y-3">
-                    <label className="flex items-center gap-2.5 cursor-pointer">
-                      <input type="checkbox" checked={form.manageStock} onChange={(e) => update("manageStock", e.target.checked)} className="w-3.5 h-3.5 accent-blue-600" />
-                      <span className="text-xs font-medium" style={{ color: "#323130" }}>Track stock quantity for this product</span>
-                    </label>
-                    {form.manageStock && (
-                      <Input label="Stock Quantity" type="number" value={form.stockQuantity} onChange={(e) => update("stockQuantity", e.target.value)} placeholder="0" />
-                    )}
+                  <CardHeader><CardTitle>Attributes</CardTitle></CardHeader>
+                  <CardContent>
+                    <AttributesPicker
+                      options={loadedAttributes}
+                      selected={selectedAttributes}
+                      onChange={setSelectedAttributes}
+                    />
                   </CardContent>
                 </Card>
               )}
 
-              {/* Variations */}
-              {form.productType === "variable" && (
-                <Card>
-                  <CardHeader><CardTitle>Variations</CardTitle></CardHeader>
-                  <CardContent>
-                    <VariationsEditor value={variations} onChange={setVariations} />
-                  </CardContent>
-                </Card>
-              )}
+              {/* Inventory */}
+              <Card>
+                <CardHeader><CardTitle>Inventory</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input type="checkbox" checked={form.manageStock} onChange={(e) => update("manageStock", e.target.checked)} className="w-3.5 h-3.5 accent-blue-600" />
+                    <span className="text-xs font-medium" style={{ color: "#323130" }}>Track stock quantity for this product</span>
+                  </label>
+                  {form.manageStock && (
+                    <Input label="Stock Quantity" type="number" value={form.stockQuantity} onChange={(e) => update("stockQuantity", e.target.value)} placeholder="0" />
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Publish to Sites */}
               <Card>

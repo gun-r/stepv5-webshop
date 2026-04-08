@@ -18,6 +18,7 @@ const productSchema = z.object({
   images: z.string().default("[]"),
   categories: z.string().default("[]"),
   tags: z.string().default("[]"),
+  attributes: z.string().default("[]"),
   variations: z.string().default("[]"),
   status: z.enum(["draft", "published"]).default("draft"),
 });

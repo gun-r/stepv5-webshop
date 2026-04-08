@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -12,13 +13,21 @@ import {
   Activity,
   Images,
   BarChart2,
+  ChevronDown,
+  ChevronRight,
+  Layers,
+  Tag,
+  SlidersHorizontal,
+  FolderOpen,
 } from "lucide-react";
 import { useMobileSidebar } from "./MobileSidebarContext";
 
-const navItems = [
+const topItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+];
+
+const navItems = [
   { href: "/sites", label: "Sites", icon: Globe },
-  { href: "/products", label: "Products", icon: Package },
   { href: "/images", label: "Images", icon: Images },
   { href: "/analytics", label: "Analytics", icon: BarChart2 },
   { href: "/users", label: "Users", icon: Users },
@@ -27,9 +36,23 @@ const navItems = [
   { href: "/docs", label: "Documentation", icon: BookOpen },
 ];
 
+const productSubItems = [
+  { href: "/products", label: "All Products", icon: Layers },
+  { href: "/products/categories", label: "Categories", icon: FolderOpen },
+  { href: "/products/tags", label: "Tags", icon: Tag },
+  { href: "/products/attributes", label: "Attributes", icon: SlidersHorizontal },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
   const { isOpen, close } = useMobileSidebar();
+  const [productsOpen, setProductsOpen] = useState(false);
+
+  useEffect(() => {
+    if (pathname.startsWith("/products")) setProductsOpen(true);
+  }, [pathname]);
+
+  const isProductsActive = pathname.startsWith("/products");
 
   return (
     <>
@@ -65,6 +88,127 @@ export function Sidebar() {
 
         {/* Nav */}
         <nav className="flex-1 py-1 overflow-y-auto">
+          {/* Dashboard first */}
+          {topItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={close}
+                className="flex items-center gap-2.5 px-3 py-2 text-xs transition-colors"
+                style={
+                  isActive
+                    ? { color: "#ffffff", backgroundColor: "rgba(0,120,212,0.2)", borderLeft: "3px solid #0078d4", paddingLeft: "9px" }
+                    : { color: "rgba(255,255,255,0.55)", borderLeft: "3px solid transparent", paddingLeft: "9px" }
+                }
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.06)";
+                    (e.currentTarget as HTMLElement).style.color = "#ffffff";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = "";
+                    (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.55)";
+                  }
+                }}
+              >
+                <Icon size={14} className="shrink-0" />
+                {item.label}
+              </Link>
+            );
+          })}
+
+          {/* Products dropdown */}
+          <button
+            onClick={() => setProductsOpen((o) => !o)}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs transition-colors"
+            style={
+              isProductsActive
+                ? {
+                    color: "#ffffff",
+                    backgroundColor: "rgba(0,120,212,0.2)",
+                    borderLeft: "3px solid #0078d4",
+                    paddingLeft: "9px",
+                  }
+                : {
+                    color: "rgba(255,255,255,0.55)",
+                    borderLeft: "3px solid transparent",
+                    paddingLeft: "9px",
+                  }
+            }
+            onMouseEnter={(e) => {
+              if (!isProductsActive) {
+                (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.06)";
+                (e.currentTarget as HTMLElement).style.color = "#ffffff";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isProductsActive) {
+                (e.currentTarget as HTMLElement).style.backgroundColor = "";
+                (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.55)";
+              }
+            }}
+          >
+            <Package size={14} className="shrink-0" />
+            <span className="flex-1 text-left">Products</span>
+            {productsOpen
+              ? <ChevronDown size={11} className="shrink-0 opacity-60" />
+              : <ChevronRight size={11} className="shrink-0 opacity-60" />}
+          </button>
+
+          {productsOpen && (
+            <div style={{ backgroundColor: "rgba(0,0,0,0.15)" }}>
+              {productSubItems.map((sub) => {
+                const SubIcon = sub.icon;
+                const isSubActive = sub.href === "/products"
+                  ? pathname === "/products"
+                  : pathname === sub.href || pathname.startsWith(sub.href + "/");
+                return (
+                  <Link
+                    key={sub.href}
+                    href={sub.href}
+                    onClick={close}
+                    className="flex items-center gap-2 py-1.5 text-xs transition-colors"
+                    style={
+                      isSubActive
+                        ? {
+                            color: "#ffffff",
+                            backgroundColor: "rgba(0,120,212,0.15)",
+                            borderLeft: "3px solid #0078d4",
+                            paddingLeft: "24px",
+                          }
+                        : {
+                            color: "rgba(255,255,255,0.45)",
+                            borderLeft: "3px solid transparent",
+                            paddingLeft: "24px",
+                          }
+                    }
+                    onMouseEnter={(e) => {
+                      if (!isSubActive) {
+                        (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.05)";
+                        (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.8)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSubActive) {
+                        (e.currentTarget as HTMLElement).style.backgroundColor = "";
+                        (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.45)";
+                      }
+                    }}
+                  >
+                    <SubIcon size={12} className="shrink-0" />
+                    {sub.label}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Other nav items */}
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =

@@ -9,13 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import { ImagePicker } from "@/components/ui/ImagePicker";
-import { VariationsEditor, VariationsData } from "@/components/ui/VariationsEditor";
 import { Badge, SyncStatusBadge } from "@/components/ui/Badge";
 import {
   ArrowLeft, Save, Trash2, RefreshCw, ExternalLink, Sparkles, Globe,
 } from "lucide-react";
-
-const EMPTY_VARIATIONS: VariationsData = { attributes: [], items: [] };
+import { ChipPicker } from "@/components/ui/ChipPicker";
+import { AttributesPicker, AttrOption, AttrSelection } from "@/components/ui/AttributesPicker";
 
 const LANGUAGES: Record<string, string> = {
   en: "English", da: "Danish", es: "Spanish", fr: "French",
@@ -49,9 +48,12 @@ interface Product {
   shortDescription: string | null; productType: string;
   price: string; salePrice: string | null; sku: string | null;
   manageStock: boolean; stockQuantity: number | null;
-  images: string; categories: string; tags: string; variations: string;
+  images: string; categories: string; tags: string; attributes: string; variations: string;
   status: string; syncs: SyncRecord[]; translations: Translation[];
 }
+
+interface CatOption { id: string; name: string; }
+interface TagOption { id: string; name: string; }
 
 interface TransFields {
   title: string;
@@ -77,13 +79,18 @@ export default function EditProductPage() {
 
   const [form, setForm] = useState({
     title: "", description: "", shortDescription: "",
-    productType: "simple" as "simple" | "variable",
+    productType: "simple",
     price: "0", salePrice: "", sku: "",
-    categories: "", tags: "", status: "draft",
+    status: "draft",
     manageStock: false, stockQuantity: "",
   });
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedAttributes, setSelectedAttributes] = useState<AttrSelection[]>([]);
+  const [loadedCategories, setLoadedCategories] = useState<CatOption[]>([]);
+  const [loadedTags, setLoadedTags] = useState<TagOption[]>([]);
+  const [loadedAttributes, setLoadedAttributes] = useState<AttrOption[]>([]);
   const [images, setImages] = useState<string[]>([]);
-  const [variations, setVariations] = useState<VariationsData>(EMPTY_VARIATIONS);
 
   // Translation state
   const [activeLang, setActiveLang] = useState<string | null>(null);
@@ -105,24 +112,22 @@ export default function EditProductPage() {
     setProduct(data);
 
     const parsedImages = JSON.parse(data.images || "[]") as string[];
-    const categories = (JSON.parse(data.categories || "[]") as string[]).join(", ");
-    const tags = (JSON.parse(data.tags || "[]") as string[]).join(", ");
-
-    let parsedVariations: VariationsData = EMPTY_VARIATIONS;
-    try { parsedVariations = JSON.parse(data.variations || "[]") as VariationsData; } catch { /* */ }
-    if (!parsedVariations?.attributes) parsedVariations = EMPTY_VARIATIONS;
+    const parsedCategories = JSON.parse(data.categories || "[]") as string[];
+    const parsedTags = JSON.parse(data.tags || "[]") as string[];
+    const parsedAttributes = JSON.parse(data.attributes || "[]") as AttrSelection[];
+    setSelectedCategories(parsedCategories);
+    setSelectedTags(parsedTags);
+    setSelectedAttributes(parsedAttributes);
 
     setImages(parsedImages);
-    setVariations(parsedVariations);
     setForm({
       title: data.title,
       description: data.description || "",
       shortDescription: data.shortDescription || "",
-      productType: (data.productType || "simple") as "simple" | "variable",
+      productType: data.productType || "simple",
       price: data.price,
       salePrice: data.salePrice || "",
       sku: data.sku || "",
-      categories, tags,
       status: data.status,
       manageStock: data.manageStock || false,
       stockQuantity: data.stockQuantity !== null ? String(data.stockQuantity) : "",
@@ -149,6 +154,21 @@ export default function EditProductPage() {
     fetch("/api/sites").then((r) => r.json()).then((d: unknown) => {
       if (Array.isArray(d)) setSites(d as Site[]);
     });
+    fetch("/api/products/categories").then((r) => r.json()).then((d) => {
+      if (Array.isArray(d)) setLoadedCategories(d.map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })));
+    }).catch(() => {});
+    fetch("/api/products/tags").then((r) => r.json()).then((d) => {
+      if (Array.isArray(d)) setLoadedTags(d.map((t: { id: string; name: string }) => ({ id: t.id, name: t.name })));
+    }).catch(() => {});
+    fetch("/api/products/attributes").then((r) => r.json()).then((d: unknown) => {
+      if (!Array.isArray(d)) return;
+      const attrs = d as AttrOption[];
+      Promise.all(
+        attrs.map((attr) =>
+          fetch(`/api/products/attributes/${attr.id}/terms`).then((r) => r.json()).then((terms) => ({ ...attr, terms: Array.isArray(terms) ? terms : [] }))
+        )
+      ).then((withTerms) => setLoadedAttributes(withTerms as AttrOption[]));
+    }).catch(() => {});
   }, [fetchProduct]);
 
   function update(key: string, value: string | boolean) {
@@ -171,12 +191,12 @@ export default function EditProductPage() {
     const payload = {
       ...form,
       images: JSON.stringify(images),
-      categories: JSON.stringify(form.categories.split(",").map((s) => s.trim()).filter(Boolean)),
-      tags: JSON.stringify(form.tags.split(",").map((s) => s.trim()).filter(Boolean)),
+      categories: JSON.stringify(selectedCategories),
+      tags: JSON.stringify(selectedTags),
+      attributes: JSON.stringify(selectedAttributes),
       salePrice: form.salePrice || null,
       sku: form.sku || null,
       stockQuantity: form.manageStock && form.stockQuantity ? parseInt(form.stockQuantity) : null,
-      variations: JSON.stringify(variations),
     };
 
     const res = await fetch(`/api/products/${id}`, {
@@ -303,7 +323,7 @@ export default function EditProductPage() {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "details", label: "Details" },
-    { id: "inventory", label: "Inventory & Variations" },
+    { id: "inventory", label: "Stocks & Attributes" },
     { id: "sync", label: `Sync (${product.syncs.length} sites)` },
   ];
 
@@ -353,16 +373,6 @@ export default function EditProductPage() {
           {/* Details Tab */}
           {tab === "details" && (
             <form onSubmit={handleSave} className="space-y-6">
-              <Card>
-                <CardHeader><CardTitle>Product Type</CardTitle></CardHeader>
-                <CardContent>
-                  <Select label="Type" value={form.productType} onChange={(e) => update("productType", e.target.value as "simple" | "variable")}>
-                    <option value="simple">Simple Product</option>
-                    <option value="variable">Variable Product</option>
-                  </Select>
-                </CardContent>
-              </Card>
-
               {/* Product Information with inline translation */}
               <Card>
                 <CardHeader>
@@ -537,16 +547,32 @@ export default function EditProductPage() {
                   {/* Base-only fields: pricing, SKU, images, categories, tags */}
                   {!activeLang && (
                     <>
-                      {form.productType === "simple" && (
-                        <div className="grid grid-cols-2 gap-4">
-                          <Input label="Regular Price" value={form.price} onChange={(e) => update("price", e.target.value)} placeholder="29.99" />
-                          <Input label="Sale Price" value={form.salePrice} onChange={(e) => update("salePrice", e.target.value)} placeholder="19.99 (optional)" />
-                        </div>
-                      )}
+                      <Select label="Product Type" value={form.productType} onChange={(e) => update("productType", e.target.value)}>
+                        <option value="simple">Simple Product</option>
+                        <option value="variable">Variable Product</option>
+                      </Select>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input label="Regular Price" value={form.price} onChange={(e) => update("price", e.target.value)} placeholder="29.99" />
+                        <Input label="Sale Price" value={form.salePrice} onChange={(e) => update("salePrice", e.target.value)} placeholder="19.99 (optional)" />
+                      </div>
                       <Input label="SKU" value={form.sku} onChange={(e) => update("sku", e.target.value)} placeholder="PROD-001" />
                       <ImagePicker images={images} onChange={setImages} />
-                      <Input label="Categories" value={form.categories} onChange={(e) => update("categories", e.target.value)} placeholder="Electronics, Gadgets" hint="Comma-separated — synced to WooCommerce" />
-                      <Input label="Tags" value={form.tags} onChange={(e) => update("tags", e.target.value)} placeholder="new, sale" hint="Comma-separated — synced to WooCommerce" />
+                      <ChipPicker
+                        label="Categories"
+                        options={loadedCategories}
+                        selected={selectedCategories}
+                        onChange={setSelectedCategories}
+                        placeholder="Search categories…"
+                        hint="Synced to WooCommerce"
+                      />
+                      <ChipPicker
+                        label="Tags"
+                        options={loadedTags}
+                        selected={selectedTags}
+                        onChange={setSelectedTags}
+                        placeholder="Search tags…"
+                        hint="Synced to WooCommerce"
+                      />
                       <Select label="Status" value={form.status} onChange={(e) => update("status", e.target.value)}>
                         <option value="draft">Draft</option>
                         <option value="published">Published</option>
@@ -555,7 +581,7 @@ export default function EditProductPage() {
                   )}
 
                   {/* Per-site pricing in translation mode */}
-                  {activeLang && activeLangData && currentTrans && form.productType === "simple" && (
+                  {activeLang && activeLangData && currentTrans && (
                     <div className="space-y-3 pt-1">
                       <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>
                         Pricing ({activeLangData.currency})
@@ -605,43 +631,40 @@ export default function EditProductPage() {
             </form>
           )}
 
-          {/* Inventory & Variations Tab */}
+          {/* Stocks & Attributes Tab */}
           {tab === "inventory" && (
             <form onSubmit={handleSave} className="space-y-6">
-              {form.productType === "simple" && (
-                <Card>
-                  <CardHeader><CardTitle>Stock Management</CardTitle></CardHeader>
-                  <CardContent className="space-y-4">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={form.manageStock}
-                        onChange={(e) => update("manageStock", e.target.checked)}
-                        className="w-4 h-4 accent-blue-600" />
-                      <span className="text-sm font-medium" style={{ color: "#323130" }}>
-                        Track stock quantity for this product
-                      </span>
-                    </label>
-                    {form.manageStock && (
-                      <Input label="Stock Quantity" type="number" value={form.stockQuantity}
-                        onChange={(e) => update("stockQuantity", e.target.value)} placeholder="0" />
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
+              {/* Attributes — variable products only */}
               {form.productType === "variable" && (
                 <Card>
-                  <CardHeader><CardTitle>Variations</CardTitle></CardHeader>
+                  <CardHeader><CardTitle>Attributes</CardTitle></CardHeader>
                   <CardContent>
-                    <VariationsEditor value={variations} onChange={setVariations} />
+                    <AttributesPicker
+                      options={loadedAttributes}
+                      selected={selectedAttributes}
+                      onChange={setSelectedAttributes}
+                    />
                   </CardContent>
                 </Card>
               )}
 
-              {form.productType === "simple" && !form.manageStock && (
-                <div className="text-sm p-4" style={{ backgroundColor: "#fff4ce", border: "1px solid #8a6914", color: "#8a6914" }}>
-                  Enable stock tracking above to manage inventory quantity.
-                </div>
-              )}
+              <Card>
+                <CardHeader><CardTitle>Stock Management</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={form.manageStock}
+                      onChange={(e) => update("manageStock", e.target.checked)}
+                      className="w-4 h-4 accent-blue-600" />
+                    <span className="text-sm font-medium" style={{ color: "#323130" }}>
+                      Track stock quantity for this product
+                    </span>
+                  </label>
+                  {form.manageStock && (
+                    <Input label="Stock Quantity" type="number" value={form.stockQuantity}
+                      onChange={(e) => update("stockQuantity", e.target.value)} placeholder="0" />
+                  )}
+                </CardContent>
+              </Card>
 
               <div className="flex gap-3">
                 <Button type="submit" loading={saving}><Save className="w-4 h-4" />Save Changes</Button>

@@ -31,8 +31,8 @@ model User {
   avatarUrl      String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
-  userRole       UserRole?     @relation(fields: [roleId], references: [id])
   activities     ActivityLog[]
+  userRole       UserRole?     @relation(fields: [roleId], references: [id])
 }
 
 model UserRole {
@@ -62,18 +62,18 @@ model AppConfig {
 }
 
 model Site {
-  id              String         @id @default(cuid())
+  id              String        @id @default(cuid())
   name            String
   url             String
   consumerKey     String
   consumerSecret  String
   wpUsername      String?
   wpAppPassword   String?
-  defaultLanguage String         @default("en")
-  currency        String         @default("EUR")
-  status          String         @default("active")
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  defaultLanguage String        @default("en")
+  currency        String        @default("EUR")
+  status          String        @default("active")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
   syncs           ProductSync[]
   wooPageViews    WooPageView[]
 }
@@ -105,6 +105,7 @@ model Product {
   images           String               @default("[]")
   categories       String               @default("[]")
   tags             String               @default("[]")
+  attributes       String               @default("[]")
   variations       String               @default("[]")
   status           String               @default("draft")
   createdAt        DateTime             @default(now())
@@ -189,18 +190,62 @@ model Image {
   width      Int?
   height     Int?
   categoryId String?
-  category   ImageCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
+  category   ImageCategory? @relation(fields: [categoryId], references: [id])
 }
 
 model PageView {
   id        String   @id @default(cuid())
   path      String
-  visitorId String?
   device    String   @default("desktop")
   browser   String?
   os        String?
   referer   String?
   createdAt DateTime @default(now())
+  visitorId String?
+}
+
+model ProductCategory {
+  id          String            @id @default(cuid())
+  name        String
+  slug        String            @unique
+  description String?
+  parentId    String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  parent      ProductCategory?  @relation("CategoryChildren", fields: [parentId], references: [id])
+  children    ProductCategory[] @relation("CategoryChildren")
+}
+
+model ProductTag {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductAttribute {
+  id        String                 @id @default(cuid())
+  name      String
+  slug      String                 @unique
+  type      String                 @default("select")
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+  terms     ProductAttributeTerm[]
+}
+
+model ProductAttributeTerm {
+  id          String           @id @default(cuid())
+  attributeId String
+  name        String
+  slug        String
+  description String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  attribute   ProductAttribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+
+  @@unique([attributeId, slug])
 }
