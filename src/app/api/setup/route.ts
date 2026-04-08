@@ -5,8 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
 const configSchema = z.object({
-  libreTranslateUrl: z.string().url("Must be a valid URL").or(z.literal("")),
-  libreTranslateApiKey: z.string(),
+  myMemoryEmail: z.string().email().or(z.literal("")).optional(),
   autoTranslate: z.boolean(),
   defaultSourceLanguage: z.string().min(2).max(5),
 });
@@ -22,8 +21,7 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    libreTranslateUrl: configMap.libreTranslateUrl || "https://libretranslate.com",
-    libreTranslateApiKey: configMap.libreTranslateApiKey || "",
+    myMemoryEmail: configMap.myMemoryEmail || "",
     autoTranslate: configMap.autoTranslate === "true",
     defaultSourceLanguage: configMap.defaultSourceLanguage || "en",
   });
@@ -43,12 +41,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { libreTranslateUrl, libreTranslateApiKey, autoTranslate, defaultSourceLanguage } =
-    result.data;
+  const { myMemoryEmail, autoTranslate, defaultSourceLanguage } = result.data;
 
   const updates = [
-    { key: "libreTranslateUrl", value: libreTranslateUrl },
-    { key: "libreTranslateApiKey", value: libreTranslateApiKey },
+    { key: "myMemoryEmail", value: myMemoryEmail || "" },
     { key: "autoTranslate", value: autoTranslate.toString() },
     { key: "defaultSourceLanguage", value: defaultSourceLanguage },
   ];

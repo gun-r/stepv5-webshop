@@ -45,22 +45,14 @@ export async function POST(
   const configMap: Record<string, string> = {};
   for (const c of configs) configMap[c.key] = c.value;
 
-  const libreTranslateUrl = configMap.libreTranslateUrl || "";
-  const libreTranslateApiKey = configMap.libreTranslateApiKey || "";
   const sourceLang = configMap.defaultSourceLanguage || "en";
-
-  if (!libreTranslateUrl) {
-    return NextResponse.json(
-      { error: "LibreTranslate URL not configured. Please go to Setup." },
-      { status: 400 }
-    );
-  }
+  const myMemoryEmail = configMap.myMemoryEmail || undefined;
 
   const translation = await translateProduct(
     product,
     result.data.targetLanguage,
     sourceLang,
-    { libreTranslateUrl, libreTranslateApiKey },
+    myMemoryEmail,
     result.data.fields
   );
 

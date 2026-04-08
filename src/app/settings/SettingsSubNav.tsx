@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Languages, Database, RefreshCw } from "lucide-react";
+import { Languages, Database, RefreshCw, Plug } from "lucide-react";
 
 const items = [
   { href: "/settings/translation", label: "Translation", icon: Languages },
   { href: "/settings/database", label: "Database Connection", icon: Database },
   { href: "/settings/currency", label: "Currency Rates", icon: RefreshCw },
+  { href: "/settings/odoo", label: "Odoo", icon: Plug },
 ];
 
 export function SettingsSubNav() {

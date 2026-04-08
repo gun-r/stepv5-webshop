@@ -7,8 +7,7 @@ import { Input, Select } from "@/components/ui/Input";
 import { Save, CheckCircle } from "lucide-react";
 
 interface Config {
-  libreTranslateUrl: string;
-  libreTranslateApiKey: string;
+  myMemoryEmail: string;
   autoTranslate: boolean;
   defaultSourceLanguage: string;
 }
@@ -24,8 +23,7 @@ const LANGUAGES = [
 
 export default function TranslationSettingsPage() {
   const [config, setConfig] = useState<Config>({
-    libreTranslateUrl: "https://libretranslate.com",
-    libreTranslateApiKey: "",
+    myMemoryEmail: "",
     autoTranslate: false,
     defaultSourceLanguage: "en",
   });
@@ -60,22 +58,20 @@ export default function TranslationSettingsPage() {
       <Card>
         <CardHeader><CardTitle>Translation Settings</CardTitle></CardHeader>
         <CardContent className="space-y-3">
+          <div className="p-3 text-xs rounded" style={{ backgroundColor: "#f0f6ff", border: "1px solid #0078d4", color: "#323130" }}>
+            <p className="font-semibold mb-1" style={{ color: "#0078d4" }}>Using MyMemory (Free)</p>
+            <p>No API key required. Free limit: <strong>5,000 chars/day</strong> per IP. Enter your email below to increase to <strong>10,000 chars/day</strong>.</p>
+          </div>
+
           <Input
-            label="LibreTranslate URL"
-            type="url"
-            value={config.libreTranslateUrl}
-            onChange={(e) => setConfig({ ...config, libreTranslateUrl: e.target.value })}
-            placeholder="https://libretranslate.com"
-            hint="Base URL of your LibreTranslate instance"
+            label="MyMemory Email (optional)"
+            type="email"
+            value={config.myMemoryEmail}
+            onChange={(e) => setConfig({ ...config, myMemoryEmail: e.target.value })}
+            placeholder="you@example.com"
+            hint="Register free at mymemory.translated.net to double your daily limit"
           />
-          <Input
-            label="LibreTranslate API Key"
-            type="password"
-            value={config.libreTranslateApiKey}
-            onChange={(e) => setConfig({ ...config, libreTranslateApiKey: e.target.value })}
-            placeholder="your-api-key"
-            hint="Leave empty if authentication is not required"
-          />
+
           <Select
             label="Default Source Language"
             value={config.defaultSourceLanguage}

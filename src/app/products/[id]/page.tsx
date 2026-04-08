@@ -106,6 +106,8 @@ export default function EditProductPage() {
     Array<{ siteId: string; siteName: string; success: boolean; error?: string }>
   >([]);
 
+  const [currencyRates, setCurrencyRates] = useState<{ from: string; to: string; rate: string }[]>([]);
+
   const fetchProduct = useCallback(async () => {
     const res = await fetch(`/api/products/${id}`);
     const data: Product = await res.json();
@@ -169,7 +171,38 @@ export default function EditProductPage() {
         )
       ).then((withTerms) => setLoadedAttributes(withTerms as AttrOption[]));
     }).catch(() => {});
+    fetch("/api/settings/currency").then((r) => r.json()).then((d: { rates?: { from: string; to: string; rate: string }[] }) => {
+      if (d.rates) setCurrencyRates(d.rates);
+    }).catch(() => {});
   }, [fetchProduct]);
+
+  // Auto-calculate price when switching to a language tab
+  useEffect(() => {
+    if (!activeLang) return;
+    const siteLang = siteLangs.find((x) => x.lang === activeLang);
+    if (!siteLang) return;
+    const targetCurrency = siteLang.currency;
+    if (targetCurrency === "USD") return;
+    const existing = transFields[activeLang];
+    if (existing?.price) return; // don't overwrite existing price
+    const baseAmount = parseFloat(form.price);
+    if (!baseAmount || isNaN(baseAmount)) return;
+    const rateEntry = currencyRates.find((r) => r.from === "USD" && r.to === targetCurrency);
+    if (!rateEntry) return;
+    const converted = (baseAmount * parseFloat(rateEntry.rate)).toFixed(2);
+    const salePriceConverted = form.salePrice
+      ? (parseFloat(form.salePrice) * parseFloat(rateEntry.rate)).toFixed(2)
+      : "";
+    setTransFields((prev) => ({
+      ...prev,
+      [activeLang]: {
+        ...(prev[activeLang] || { title: "", shortDescription: "", description: "", price: "", salePrice: "" }),
+        price: converted,
+        salePrice: existing?.salePrice || salePriceConverted,
+      },
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeLang]);
 
   function update(key: string, value: string | boolean) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -581,29 +614,72 @@ export default function EditProductPage() {
                   )}
 
                   {/* Per-site pricing in translation mode */}
-                  {activeLang && activeLangData && currentTrans && (
-                    <div className="space-y-3 pt-1">
-                      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>
-                        Pricing ({activeLangData.currency})
-                      </p>
-                      <div className="grid grid-cols-2 gap-4">
-                        <Input
-                          label={`Regular Price (${activeLangData.currency})`}
-                          value={currentTrans.price}
-                          onChange={(e) => updateTrans("price", e.target.value)}
-                          placeholder={form.price || "0.00"}
-                          hint={`Base: ${form.price || "0"}`}
-                        />
-                        <Input
-                          label={`Sale Price (${activeLangData.currency})`}
-                          value={currentTrans.salePrice}
-                          onChange={(e) => updateTrans("salePrice", e.target.value)}
-                          placeholder={form.salePrice || "optional"}
-                          hint={form.salePrice ? `Base: ${form.salePrice}` : "optional"}
-                        />
+                  {activeLang && activeLangData && currentTrans && (() => {
+                    const targetCurrency = activeLangData.currency;
+                    const rateEntry = currencyRates.find((r) => r.from === "USD" && r.to === targetCurrency);
+                    const rateLabel = rateEntry ? `1 USD = ${parseFloat(rateEntry.rate).toFixed(4)} ${targetCurrency}` : null;
+                    function recalculate() {
+                      if (!rateEntry || !activeLang) return;
+                      const base = parseFloat(form.price);
+                      const sale = parseFloat(form.salePrice);
+                      setTransFields((prev) => ({
+                        ...prev,
+                        [activeLang]: {
+                          ...(prev[activeLang] || { title: "", shortDescription: "", description: "", price: "", salePrice: "" }),
+                          price: (!isNaN(base) ? base * parseFloat(rateEntry.rate) : 0).toFixed(2),
+                          salePrice: (!isNaN(sale) && form.salePrice ? sale * parseFloat(rateEntry.rate) : 0).toFixed(2),
+                        },
+                      }));
+                    }
+                    return (
+                      <div className="space-y-3 pt-1">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>
+                            Pricing ({targetCurrency})
+                          </p>
+                          <div className="flex items-center gap-2">
+                            {rateLabel && (
+                              <span className="text-xs px-1.5 py-0.5" style={{ backgroundColor: "#f3f2f1", color: "#605e5c" }}>
+                                {rateLabel}
+                              </span>
+                            )}
+                            {rateEntry && (
+                              <button
+                                type="button"
+                                onClick={recalculate}
+                                className="inline-flex items-center gap-1 text-xs px-2 py-0.5"
+                                style={{ color: "#0078d4", border: "1px solid #0078d4" }}
+                                title="Recalculate from base USD price"
+                              >
+                                ↺ Recalculate
+                              </button>
+                            )}
+                            {!rateEntry && targetCurrency !== "USD" && (
+                              <span className="text-xs" style={{ color: "#a4262c" }}>
+                                No USD→{targetCurrency} rate in settings
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <Input
+                            label={`Regular Price (${targetCurrency})`}
+                            value={currentTrans.price}
+                            onChange={(e) => updateTrans("price", e.target.value)}
+                            placeholder={form.price || "0.00"}
+                            hint={`Base (USD): ${form.price || "0"}`}
+                          />
+                          <Input
+                            label={`Sale Price (${targetCurrency})`}
+                            value={currentTrans.salePrice}
+                            onChange={(e) => updateTrans("salePrice", e.target.value)}
+                            placeholder={form.salePrice || "optional"}
+                            hint={form.salePrice ? `Base (USD): ${form.salePrice}` : "optional"}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* Non-pricing fields hint in translation mode */}
                   {activeLang && (
