@@ -32,15 +32,16 @@ function parseUA(ua: string): { device: string; browser: string; os: string } {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as { path?: string; referer?: string };
+    const body = await req.json() as { path?: string; referer?: string; visitorId?: string };
     const path = body.path || "/";
     const referer = body.referer || null;
+    const visitorId = body.visitorId || null;
     const ua = req.headers.get("user-agent") || "";
 
     const { device, browser, os } = parseUA(ua);
 
     await prisma.pageView.create({
-      data: { path, device, browser, os, referer },
+      data: { path, visitorId, device, browser, os, referer },
     });
 
     return NextResponse.json({ ok: true });

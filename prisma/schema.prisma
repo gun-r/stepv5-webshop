@@ -62,19 +62,33 @@ model AppConfig {
 }
 
 model Site {
-  id              String        @id @default(cuid())
+  id              String         @id @default(cuid())
   name            String
   url             String
   consumerKey     String
   consumerSecret  String
   wpUsername      String?
   wpAppPassword   String?
-  defaultLanguage String        @default("en")
-  currency        String        @default("EUR")
-  status          String        @default("active")
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  defaultLanguage String         @default("en")
+  currency        String         @default("EUR")
+  status          String         @default("active")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
   syncs           ProductSync[]
+  wooPageViews    WooPageView[]
+}
+
+model WooPageView {
+  id        String   @id @default(cuid())
+  siteId    String
+  path      String
+  visitorId String?
+  device    String   @default("desktop")
+  browser   String?
+  os        String?
+  referer   String?
+  createdAt DateTime @default(now())
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
 }
 
 model Product {
@@ -183,6 +197,7 @@ model Image {
 model PageView {
   id        String   @id @default(cuid())
   path      String
+  visitorId String?
   device    String   @default("desktop")
   browser   String?
   os        String?

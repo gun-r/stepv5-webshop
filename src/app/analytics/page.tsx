@@ -41,7 +41,7 @@ interface PageViewsData {
   devices: { name: string; count: number }[];
   browsers: { name: string; count: number }[];
   os: { name: string; count: number }[];
-  topPages: { path: string; count: number }[];
+  topPages: { path: string; count: number; unique: number; returning: number }[];
 }
 interface InternalData {
   products: { total: number; published: number; draft: number };
@@ -73,6 +73,7 @@ interface WooData {
   recentOrders: WooOrder[];
   topProducts: TopProduct[];
   orderLocations: LocationEntry[];
+  topPages: { path: string; count: number; unique: number; returning: number }[];
   mostViewedProducts: MostViewed[];
   abandonedCarts: { count: number; orders: AbandonedOrder[] };
 }
@@ -124,6 +125,55 @@ function BarRow({
   );
 }
 
+// ── Tracking Snippet ───────────────────────────────────────────────────────────
+
+function TrackingSnippet({ siteId }: { siteId: string }) {
+  const [copied, setCopied] = useState(false);
+  const appUrl = typeof window !== "undefined" ? window.location.origin : "https://your-webshop-app.com";
+  const snippet = `add_action('wp_footer', function() { ?>
+<script>
+(function(){
+  var v=localStorage.getItem('_wsv')||(function(){
+    var i=Math.random().toString(36).slice(2)+Date.now().toString(36);
+    localStorage.setItem('_wsv',i);return i;
+  })();
+  fetch('${appUrl}/api/analytics/track-site',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({siteId:'${siteId}',path:location.pathname,visitorId:v,referer:document.referrer||null})
+  }).catch(function(){});
+})();
+</script>
+<?php }, 99);`;
+
+  function copy() {
+    navigator.clipboard.writeText(snippet).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <div className="relative">
+      <pre
+        className="text-xs p-3 overflow-x-auto"
+        style={{ backgroundColor: "#1e1e1e", color: "#d4d4d4", fontFamily: "monospace", whiteSpace: "pre" }}
+      >
+        {snippet}
+      </pre>
+      <button
+        onClick={copy}
+        className="absolute top-2 right-2 px-2 py-1 text-xs font-medium"
+        style={copied
+          ? { backgroundColor: "#107c10", color: "#fff" }
+          : { backgroundColor: "#0078d4", color: "#fff" }}
+      >
+        {copied ? "Copied!" : "Copy"}
+      </button>
+    </div>
+  );
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
@@ -171,7 +221,8 @@ export default function AnalyticsPage() {
   const maxDevice  = Math.max(...(pv?.devices.map((d) => d.count) ?? [1]), 1);
   const maxBrowser = Math.max(...(pv?.browsers.map((b) => b.count) ?? [1]), 1);
   const maxOs      = Math.max(...(pv?.os.map((o) => o.count) ?? [1]), 1);
-  const maxPage    = Math.max(...(pv?.topPages.map((p) => p.count) ?? [1]), 1);
+  const activeTopPages = siteId ? (woo?.topPages ?? []) : (pv?.topPages ?? []);
+  const maxPage = Math.max(...activeTopPages.map((p) => p.count), 1);
 
   const maxLocation = Math.max(...(woo?.orderLocations.map((l) => l.count) ?? [1]), 1);
   const maxViewed   = Math.max(...(woo?.mostViewedProducts.map((p) => p.sales) ?? [1]), 1);
@@ -395,15 +446,102 @@ export default function AnalyticsPage() {
           </div>
 
           {/* ── Top pages ── */}
-          {!!pv?.topPages.length && (
-            <Card>
-              <CardHeader><CardTitle>Top Pages (Last 30 Days)</CardTitle></CardHeader>
-              <CardContent className="space-y-2.5">
-                {pv.topPages.map((p) => (
-                  <BarRow key={p.path} label={p.path} value={p.count} max={maxPage} color="#0078d4" />
-                ))}
-              </CardContent>
-            </Card>
+          {siteId ? (
+            !loadingWoo && (
+              woo && woo.topPages.length > 0 ? (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <Eye size={12} style={{ color: "#0078d4" }} />
+                      <CardTitle>Top Pages — {internal?.sites.find((s) => s.id === siteId)?.name} (Last 30 Days)</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr style={{ borderBottom: "1px solid #edebe9", backgroundColor: "#f3f2f1" }}>
+                          <th className="text-left px-4 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Page</th>
+                          <th className="text-right px-4 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Total</th>
+                          <th className="text-right px-4 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#0078d4" }}>Unique</th>
+                          <th className="text-right px-4 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#107c10" }}>Returning</th>
+                          <th className="px-4 py-2 w-32"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {woo.topPages.map((p) => (
+                          <tr key={p.path} style={{ borderBottom: "1px solid #f3f2f1" }}>
+                            <td className="px-4 py-2 text-xs font-mono" style={{ color: "#323130" }}>{p.path}</td>
+                            <td className="px-4 py-2 text-xs text-right font-semibold" style={{ color: "#323130" }}>{p.count}</td>
+                            <td className="px-4 py-2 text-xs text-right font-semibold" style={{ color: "#0078d4" }}>{p.unique}</td>
+                            <td className="px-4 py-2 text-xs text-right font-semibold" style={{ color: "#107c10" }}>{p.returning}</td>
+                            <td className="px-4 py-2">
+                              <div className="h-1.5 w-full" style={{ backgroundColor: "#f3f2f1" }}>
+                                <div className="h-1.5" style={{ width: `${(p.count / maxPage) * 100}%`, backgroundColor: "#0078d4" }} />
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <Eye size={12} style={{ color: "#0078d4" }} />
+                      <CardTitle>Top Pages — Setup Required</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-xs" style={{ color: "#605e5c" }}>
+                      WordPress does not expose page view data via its REST API. Add the snippet below to your WooCommerce site to start tracking real page views.
+                    </p>
+                    <p className="text-xs font-semibold" style={{ color: "#323130" }}>
+                      In WordPress admin → Appearance → Theme File Editor → <span className="font-mono">functions.php</span> — paste at the bottom:
+                    </p>
+                    <TrackingSnippet siteId={siteId} />
+                    <p className="text-xs" style={{ color: "#a19f9d" }}>
+                      Once added, page views will appear here within minutes. Data is stored per visitor using localStorage.
+                    </p>
+                  </CardContent>
+                </Card>
+              )
+            )
+          ) : (
+            !!pv?.topPages.length && (
+              <Card>
+                <CardHeader><CardTitle>Top Pages — Admin App (Last 30 Days)</CardTitle></CardHeader>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr style={{ borderBottom: "1px solid #edebe9", backgroundColor: "#f3f2f1" }}>
+                        <th className="text-left px-4 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Page</th>
+                        <th className="text-right px-4 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Total</th>
+                        <th className="text-right px-4 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#0078d4" }}>Unique</th>
+                        <th className="text-right px-4 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#107c10" }}>Returning</th>
+                        <th className="px-4 py-2 w-32"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pv.topPages.map((p) => (
+                        <tr key={p.path} style={{ borderBottom: "1px solid #f3f2f1" }}>
+                          <td className="px-4 py-2 text-xs font-mono" style={{ color: "#323130" }}>{p.path}</td>
+                          <td className="px-4 py-2 text-xs text-right font-semibold" style={{ color: "#323130" }}>{p.count}</td>
+                          <td className="px-4 py-2 text-xs text-right font-semibold" style={{ color: "#0078d4" }}>{p.unique}</td>
+                          <td className="px-4 py-2 text-xs text-right font-semibold" style={{ color: "#107c10" }}>{p.returning}</td>
+                          <td className="px-4 py-2">
+                            <div className="h-1.5 w-full" style={{ backgroundColor: "#f3f2f1" }}>
+                              <div className="h-1.5" style={{ width: `${(p.count / maxPage) * 100}%`, backgroundColor: "#0078d4" }} />
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )
           )}
 
           {/* ── WooCommerce: location + most viewed + abandoned ── */}

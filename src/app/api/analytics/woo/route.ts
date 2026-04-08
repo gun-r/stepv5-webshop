@@ -65,8 +65,39 @@ export async function GET(req: NextRequest) {
   const auth = authHeader(site.consumerKey, site.consumerSecret);
   const headers = { Authorization: auth };
 
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
   // One hour ago (for abandoned cart threshold)
   const abandonedBefore = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+  // ── WooPageView top pages (our own tracking) ──
+  const topPagesRaw = await prisma.wooPageView.groupBy({
+    by: ["path"],
+    where: { siteId, createdAt: { gte: thirtyDaysAgo } },
+    _count: { path: true },
+    orderBy: { _count: { path: "desc" } },
+    take: 10,
+  }).catch(() => [] as { path: string; _count: { path: number } }[]);
+
+  let topPages: { path: string; count: number; unique: number; returning: number }[] = [];
+  if (topPagesRaw.length > 0) {
+    const topPaths = topPagesRaw.map((p) => p.path);
+    const visitorRows = await prisma.wooPageView.findMany({
+      where: { siteId, createdAt: { gte: thirtyDaysAgo }, path: { in: topPaths } },
+      select: { path: true, visitorId: true },
+    }).catch(() => [] as { path: string; visitorId: string | null }[]);
+
+    const pathVisitors: Record<string, Set<string>> = {};
+    for (const row of visitorRows) {
+      if (!pathVisitors[row.path]) pathVisitors[row.path] = new Set();
+      if (row.visitorId) pathVisitors[row.path].add(row.visitorId);
+    }
+    topPages = topPagesRaw.map((p) => {
+      const unique = pathVisitors[p.path]?.size ?? 0;
+      return { path: p.path, count: p._count.path, unique, returning: Math.max(0, p._count.path - unique) };
+    });
+  }
 
   const [
     ordersRes,
@@ -212,6 +243,7 @@ export async function GET(req: NextRequest) {
       quantity: p.quantity,
     })),
     orderLocations,
+    topPages,
     mostViewedProducts,
     abandonedCarts: {
       count: abandonedOrders.length,

@@ -99,8 +99,30 @@ export async function GET(req: NextRequest) {
   const deviceBreakdown = deviceRes.status === "fulfilled" ? deviceRes.value : [];
   const browserBreakdown = browserRes.status === "fulfilled" ? browserRes.value : [];
   const osBreakdown = osRes.status === "fulfilled" ? osRes.value : [];
-  const topPages = topPagesRes.status === "fulfilled" ? topPagesRes.value : [];
   const totalPageViews = totalViewsRes.status === "fulfilled" ? totalViewsRes.value : 0;
+
+  // Compute unique & returning visitors per top path
+  type TopPageEntry = { path: string; count: number; unique: number; returning: number };
+  let topPages: TopPageEntry[] = [];
+  if (topPagesRes.status === "fulfilled" && topPagesRes.value.length > 0) {
+    const rawTopPages = topPagesRes.value;
+    const topPaths = rawTopPages.map((p) => p.path);
+    const visitorRows = await prisma.pageView.findMany({
+      where: { createdAt: { gte: thirtyDaysAgo }, path: { in: topPaths } },
+      select: { path: true, visitorId: true },
+    }).catch(() => [] as { path: string; visitorId: string | null }[]);
+
+    const pathVisitors: Record<string, Set<string>> = {};
+    for (const row of visitorRows) {
+      if (!pathVisitors[row.path]) pathVisitors[row.path] = new Set();
+      if (row.visitorId) pathVisitors[row.path].add(row.visitorId);
+    }
+
+    topPages = rawTopPages.map((p) => {
+      const unique = pathVisitors[p.path]?.size ?? 0;
+      return { path: p.path, count: p._count.path, unique, returning: Math.max(0, p._count.path - unique) };
+    });
+  }
 
   // Build 30-day trend buckets
   const trendByDate: Record<string, { synced: number; error: number }> = {};
@@ -135,7 +157,7 @@ export async function GET(req: NextRequest) {
       devices: deviceBreakdown.map((d) => ({ name: d.device, count: d._count.device })),
       browsers: browserBreakdown.map((b) => ({ name: b.browser ?? "Other", count: b._count.browser })),
       os: osBreakdown.map((o) => ({ name: o.os ?? "Other", count: o._count.os })),
-      topPages: topPages.map((p) => ({ path: p.path, count: p._count.path })),
+      topPages,
     },
   });
 }
