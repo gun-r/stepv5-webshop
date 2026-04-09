@@ -172,6 +172,17 @@ export default async function DocsPage() {
                       </div>
                     ))}
                   </div>
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    {[
+                      { label: "Categorize", desc: "Manage products by Categories, Tags, and Attributes" },
+                      { label: "Integrate", desc: "Connect Odoo On-Premise or Odoo Online for ERP sync" },
+                    ].map((f) => (
+                      <div key={f.label} className="p-3" style={{ border: "1px solid #edebe9", backgroundColor: "#faf9f8" }}>
+                        <p className="text-sm font-semibold" style={{ color: "#0078d4" }}>{f.label}</p>
+                        <p className="text-xs mt-1" style={{ color: "#605e5c" }}>{f.desc}</p>
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             </Section>
@@ -181,7 +192,7 @@ export default async function DocsPage() {
               <Card>
                 <CardContent className="py-4 space-y-3">
                   <p className="text-sm" style={{ color: "#605e5c" }}>
-                    End-to-end integration overview — from the legacy MSSQL database (STEPv4) through the STEPv5 management app to the live WooCommerce storefronts.
+                    End-to-end integration overview — from the legacy MSSQL database (STEPv4) through the STEPv5 management app to live WooCommerce storefronts, external translation, currency, and Odoo ERP.
                   </p>
                   <ArchitecturePreview />
                   <div className="grid grid-cols-3 gap-3 pt-1">
@@ -189,6 +200,9 @@ export default async function DocsPage() {
                       { color: "#d13438", label: "MSSQL (STEPv4)", desc: "Live search for employees and products via configurable table mappings" },
                       { color: "#0078d4", label: "STEPv5 App", desc: "Next.js management layer — products, users, sites, sync, settings" },
                       { color: "#7719aa", label: "WooCommerce Sites", desc: "Multiple storefronts synced via WC REST API with per-site credentials" },
+                      { color: "#107c10", label: "Odoo ERP", desc: "On-premise or Odoo Online integration via JSON-RPC authentication — configured in Settings → Odoo" },
+                      { color: "#8764b8", label: "MyMemory Translation", desc: "Free machine translation API — no key required, supports 5k–10k chars/day with optional email" },
+                      { color: "#ca5010", label: "Frankfurter (ECB)", desc: "Free live currency exchange rates — used for auto-converting per-site prices from USD base" },
                     ].map((f) => (
                       <div key={f.label} className="p-3" style={{ border: `1px solid ${f.color}22`, backgroundColor: `${f.color}08` }}>
                         <p className="text-sm font-semibold" style={{ color: f.color }}>{f.label}</p>
@@ -217,7 +231,7 @@ export default async function DocsPage() {
                       ["Passwords", "bcryptjs", "—", "Password hashing"],
                       ["Validation", "Zod", "v3", "Schema validation on API inputs"],
                       ["WooCommerce", "REST API v3", "—", "Product push/pull to remote stores"],
-                      ["Translation", "LibreTranslate / MyMemory", "—", "Open-source machine translation API (configurable)"],
+                      ["Translation", "MyMemory API", "—", "Free machine translation (no API key required, optional email for higher limits)"],
                       ["MSSQL", "mssql (node-mssql)", "—", "External Microsoft SQL Server connection for product import"],
                       ["Exchange Rates", "Frankfurter (ECB)", "—", "Free live currency rate API, proxied server-side"],
                       ["Build", "Turbopack", "—", "Fast dev bundler (Next.js built-in)"],
@@ -255,10 +269,23 @@ export default async function DocsPage() {
 │   │   │   │       └── [id]/route.ts     # PUT, DELETE category
 │   │   │   ├── products/
 │   │   │   │   ├── route.ts              # GET list, POST create
-│   │   │   │   └── [id]/
-│   │   │   │       ├── route.ts          # GET, PUT, DELETE
-│   │   │   │       ├── sync/route.ts     # POST sync to sites
-│   │   │   │       └── translate/route.ts # POST translate
+│   │   │   │   ├── [id]/
+│   │   │   │   │   ├── route.ts          # GET, PUT, DELETE
+│   │   │   │   │   ├── sync/route.ts     # POST sync to sites
+│   │   │   │   │   └── translate/route.ts # POST/PUT translate
+│   │   │   │   ├── categories/
+│   │   │   │   │   ├── route.ts          # GET list, POST create
+│   │   │   │   │   └── [id]/route.ts     # PUT, DELETE
+│   │   │   │   ├── tags/
+│   │   │   │   │   ├── route.ts          # GET list, POST create
+│   │   │   │   │   └── [id]/route.ts     # PUT, DELETE
+│   │   │   │   └── attributes/
+│   │   │   │       ├── route.ts          # GET list, POST create
+│   │   │   │       └── [id]/
+│   │   │   │           ├── route.ts      # GET, PUT, DELETE
+│   │   │   │           └── terms/
+│   │   │   │               ├── route.ts          # GET list, POST create
+│   │   │   │               └── [termId]/route.ts # PUT, DELETE
 │   │   │   ├── sites/
 │   │   │   │   ├── route.ts              # GET list, POST create
 │   │   │   │   └── [id]/
@@ -268,23 +295,31 @@ export default async function DocsPage() {
 │   │   │   │   ├── currency/
 │   │   │   │   │   ├── route.ts          # GET/POST saved currency rates
 │   │   │   │   │   └── live/route.ts     # GET live rate via Frankfurter proxy
-│   │   │   │   └── mssql/
-│   │   │   │       ├── route.ts          # GET/POST MSSQL connection config
-│   │   │   │       ├── test/route.ts     # POST test MSSQL connection
-│   │   │   │       ├── tables/route.ts   # GET list of MSSQL tables
-│   │   │   │       ├── columns/route.ts  # GET columns for a table
-│   │   │   │       ├── search/route.ts   # GET search rows in a table
-│   │   │   │       └── mappings/route.ts # GET/POST column→field mappings
-│   │   │   ├── setup/route.ts            # GET config, POST save
+│   │   │   │   ├── mssql/
+│   │   │   │   │   ├── route.ts          # GET/POST MSSQL connection config
+│   │   │   │   │   ├── test/route.ts     # POST test MSSQL connection
+│   │   │   │   │   ├── tables/route.ts   # GET list of MSSQL tables
+│   │   │   │   │   ├── columns/route.ts  # GET columns for a table
+│   │   │   │   │   ├── search/route.ts   # GET search rows in a table
+│   │   │   │   │   └── mappings/route.ts # GET/POST column→field mappings
+│   │   │   │   └── odoo/
+│   │   │   │       ├── route.ts          # GET/POST Odoo connection config
+│   │   │   │       └── test/route.ts     # POST test Odoo connection
+│   │   │   ├── setup/route.ts            # GET/POST translation + MyMemory config
 │   │   │   └── upload/route.ts           # POST image upload
 │   │   ├── dashboard/page.tsx # Dashboard with stats + activity
 │   │   ├── docs/page.tsx      # This documentation page
 │   │   ├── images/
 │   │   │   └── page.tsx       # Image library (gallery + categories)
 │   │   ├── products/
-│   │   │   ├── page.tsx       # Product list table
-│   │   │   ├── new/page.tsx   # Create product form + MSSQL import panel
-│   │   │   └── [id]/page.tsx  # Edit product (tabs)
+│   │   │   ├── page.tsx           # Product list table
+│   │   │   ├── new/page.tsx       # Create product form + MSSQL import panel
+│   │   │   ├── [id]/page.tsx      # Edit product (tabs: Details, Stocks & Attributes, Sync)
+│   │   │   ├── categories/page.tsx # WooCommerce-style category management
+│   │   │   ├── tags/page.tsx       # Tag management
+│   │   │   └── attributes/
+│   │   │       ├── page.tsx        # Attribute management
+│   │   │       └── [id]/terms/page.tsx # Terms management per attribute
 │   │   ├── sites/
 │   │   │   ├── page.tsx       # Site list table
 │   │   │   ├── new/page.tsx   # Create site form
@@ -294,7 +329,8 @@ export default async function DocsPage() {
 │   │   │   ├── page.tsx       # Settings index (redirects to /settings/database)
 │   │   │   ├── database/page.tsx    # MSSQL connection + column mapping
 │   │   │   ├── currency/page.tsx    # Currency exchange rates (manual + live fetch)
-│   │   │   ├── translation/page.tsx # LibreTranslate / translation config
+│   │   │   ├── translation/page.tsx # MyMemory translation config
+│   │   │   ├── odoo/page.tsx        # Odoo integration (On-Premise + Online tabs)
 │   │   │   └── SettingsSubNav.tsx   # Tab navigation between settings pages
 │   │   ├── setup/page.tsx     # App configuration (legacy)
 │   │   ├── globals.css        # Global styles + Tailwind import
@@ -306,20 +342,22 @@ export default async function DocsPage() {
 │   │   │   └── Header.tsx     # Top bar with user + sign out
 │   │   └── ui/
 │   │       ├── ArchitecturePreview.tsx # Lightbox for architecture SVG
+│   │       ├── AttributesPicker.tsx  # Multi-attribute + terms selector (variable products)
 │   │       ├── Badge.tsx      # Status badges + SyncStatusBadge
 │   │       ├── Button.tsx     # Button variants
 │   │       ├── Card.tsx       # Card, CardHeader, CardContent, CardTitle
+│   │       ├── ChipPicker.tsx  # Multi-select chip input (categories, tags)
 │   │       ├── ImagePicker.tsx # Image library modal (Library + Upload tabs)
 │   │       ├── ImageUploader.tsx # Simple drag-and-drop upload (legacy)
 │   │       ├── Input.tsx      # Input, Textarea, Select
-│   │       └── VariationsEditor.tsx # Variable product variations UI
+│   │       └── VariationsEditor.tsx # Variable product variations UI (legacy)
 │   ├── generated/
 │   │   └── prisma/            # Prisma generated client (gitignored)
 │   └── lib/
 │       ├── auth.ts            # NextAuth configuration
 │       ├── mssql.ts           # MSSQL singleton pool + query helpers
 │       ├── prisma.ts          # Prisma client singleton
-│       ├── translation.ts     # LibreTranslate integration
+│       ├── translation.ts     # MyMemory translation integration
 │       └── woocommerce.ts     # WooCommerce REST API helpers
 ├── .env.local                 # Environment variables (gitignored)
 ├── .gitignore
@@ -372,7 +410,7 @@ export default async function DocsPage() {
                     ]}
                   />
                   <p className="text-xs pt-1" style={{ color: "#605e5c" }}>
-                    Known keys: <Code>libreTranslateUrl</Code>, <Code>libreTranslateApiKey</Code>, <Code>defaultSourceLanguage</Code>, <Code>autoTranslate</Code>, <Code>currencyRates</Code> (JSON array of rate objects)
+                    Known keys: <Code>myMemoryEmail</Code>, <Code>defaultSourceLanguage</Code>, <Code>autoTranslate</Code>, <Code>currencyRates</Code> (JSON array of rate objects), <Code>odooMode</Code>, <Code>odooUrl</Code>, <Code>odooDatabase</Code>, <Code>odooUsername</Code>, <Code>odooApiKey</Code>, <Code>odooOnlineSubdomain</Code>
                   </p>
                 </CardContent>
               </Card>
@@ -411,9 +449,11 @@ export default async function DocsPage() {
                       [<Code key="price">price</Code>, "String", 'Regular price. String to preserve decimals (default "0")'],
                       [<Code key="salePrice">salePrice</Code>, "String?", "Optional sale price"],
                       [<Code key="sku">sku</Code>, "String?", "Optional stock keeping unit"],
+                      [<Code key="productType">productType</Code>, "String", '"simple" or "variable". Default: "simple". Controls WooCommerce product type on sync'],
                       [<Code key="images">images</Code>, "String", 'JSON array of URLs. e.g. \'["/uploads/abc.jpg"]\'. Default: "[]"'],
-                      [<Code key="categories">categories</Code>, "String", 'JSON array of category name strings. Default: "[]"'],
-                      [<Code key="tags">tags</Code>, "String", 'JSON array of tag name strings. Default: "[]"'],
+                      [<Code key="categories">categories</Code>, "String", 'JSON array of selected category name strings (from ProductCategory). Default: "[]"'],
+                      [<Code key="tags">tags</Code>, "String", 'JSON array of selected tag name strings (from ProductTag). Default: "[]"'],
+                      [<Code key="attributes">attributes</Code>, "String", 'JSON array of selected attribute+terms objects (from ProductAttribute). Default: "[]". Only used for variable products'],
                       [<Code key="status">status</Code>, "String", '"draft" or "published". Maps to WooCommerce "draft"/"publish"'],
                       [<Code key="createdAt2">createdAt</Code>, "DateTime", "Auto-set on create"],
                       [<Code key="updatedAt3">updatedAt</Code>, "DateTime", "Auto-updated"],
@@ -547,21 +587,87 @@ export default async function DocsPage() {
               </Card>
 
               <Card>
+                <CardHeader><CardTitle>ProductCategory</CardTitle></CardHeader>
+                <CardContent className="py-4 space-y-2">
+                  <p className="text-xs" style={{ color: "#605e5c" }}>WooCommerce-style product categories. Supports parent→child hierarchy. Linked to products via the JSON <Code>categories</Code> field on Product (stores selected category names).</p>
+                  <Table
+                    headers={["Column", "Type", "Notes"]}
+                    rows={[
+                      [<Code key="id">id</Code>, "String (CUID)", "Primary key"],
+                      [<Code key="name">name</Code>, "String", "Display name"],
+                      [<Code key="slug">slug</Code>, "String", "Unique URL-safe slug, auto-generated from name"],
+                      [<Code key="description">description</Code>, "String?", "Optional description"],
+                      [<Code key="parentId">parentId</Code>, "String?", "FK → ProductCategory (self-relation for nested categories)"],
+                      [<Code key="createdAt">createdAt</Code>, "DateTime", "Auto-set on create"],
+                      [<Code key="updatedAt">updatedAt</Code>, "DateTime", "Auto-updated"],
+                    ]}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle>ProductTag</CardTitle></CardHeader>
+                <CardContent className="py-4 space-y-2">
+                  <p className="text-xs" style={{ color: "#605e5c" }}>WooCommerce-style product tags. Flat list (no hierarchy). Linked to products via the JSON <Code>tags</Code> field on Product.</p>
+                  <Table
+                    headers={["Column", "Type", "Notes"]}
+                    rows={[
+                      [<Code key="id">id</Code>, "String (CUID)", "Primary key"],
+                      [<Code key="name">name</Code>, "String", "Display name"],
+                      [<Code key="slug">slug</Code>, "String", "Unique URL-safe slug"],
+                      [<Code key="description">description</Code>, "String?", "Optional description"],
+                      [<Code key="createdAt">createdAt</Code>, "DateTime", "Auto-set on create"],
+                      [<Code key="updatedAt">updatedAt</Code>, "DateTime", "Auto-updated"],
+                    ]}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle>ProductAttribute + ProductAttributeTerm</CardTitle></CardHeader>
+                <CardContent className="py-4 space-y-2">
+                  <p className="text-xs" style={{ color: "#605e5c" }}>WooCommerce-style attributes (e.g. "Color") and their terms (e.g. "Red", "Blue"). Only relevant for variable products. Linked to products via the JSON <Code>attributes</Code> field on Product (stores selected attribute+terms as self-contained objects).</p>
+                  <Table
+                    headers={["Column", "Type", "Notes"]}
+                    rows={[
+                      [<Code key="id">id</Code>, "String (CUID)", "Primary key (ProductAttribute)"],
+                      [<Code key="name">name</Code>, "String", "Attribute name e.g. 'Color'"],
+                      [<Code key="slug">slug</Code>, "String", "Unique slug"],
+                      [<Code key="type">type</Code>, "String", '"select", "color", or "button". Default: "select"'],
+                      ["—", "—", "—"],
+                      [<Code key="termId">id (term)</Code>, "String (CUID)", "Primary key (ProductAttributeTerm)"],
+                      [<Code key="attributeId">attributeId</Code>, "String", "FK → ProductAttribute (cascade delete)"],
+                      [<Code key="termName">name (term)</Code>, "String", "Term value e.g. 'Red'"],
+                      [<Code key="termSlug">slug (term)</Code>, "String", "Unique per attribute (@@unique [attributeId, slug])"],
+                    ]}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
                 <CardHeader><CardTitle>Entity Relationship</CardTitle></CardHeader>
                 <CardContent className="py-4">
                   <CodeBlock>{`Product  ──< ProductSync >──  Site
 Product  ──< ProductTranslation
 
+ProductCategory  ──< ProductCategory  (self-relation: parent → children)
+ProductAttribute ──< ProductAttributeTerm  (cascade delete)
+
 ImageCategory  ──< Image   (SetNull on category delete)
 
 MssqlConnection    (singleton — one row)
 MssqlTableMapping  (one per page slug, stores column→field map)
-AppConfig          (key-value — currencyRates, translation config)
+AppConfig          (key-value — currencyRates, MyMemory email, Odoo config)
+
+Product.categories  → JSON array of ProductCategory names (selected)
+Product.tags        → JSON array of ProductTag names (selected)
+Product.attributes  → JSON array of {id, name, slug, terms[]} (selected, variable only)
 
 Cascade deletes:
-  Delete Product       →  removes all ProductSync + ProductTranslation rows
-  Delete Site          →  removes all ProductSync rows for that site
-  Delete ImageCategory →  sets Image.categoryId = NULL (images kept)`}
+  Delete Product          →  removes all ProductSync + ProductTranslation rows
+  Delete Site             →  removes all ProductSync rows for that site
+  Delete ImageCategory    →  sets Image.categoryId = NULL (images kept)
+  Delete ProductAttribute →  removes all its ProductAttributeTerm rows`}
                   </CodeBlock>
                 </CardContent>
               </Card>
@@ -596,10 +702,50 @@ Cascade deletes:
                   ],
                 },
                 {
-                  group: "Setup",
+                  group: "Product Categories",
                   routes: [
-                    { method: "GET", path: "/api/setup", desc: "Read AppConfig rows and return as structured object: libreTranslateUrl, libreTranslateApiKey, autoTranslate, defaultSourceLanguage." },
-                    { method: "POST", path: "/api/setup", desc: "Save config values to AppConfig table using upsert per key." },
+                    { method: "GET", path: "/api/products/categories", desc: "List all product categories including parent and children relations." },
+                    { method: "POST", path: "/api/products/categories", desc: "Create a category. Body: { name, slug?, description?, parentId? }. Auto-generates slug from name." },
+                    { method: "PUT", path: "/api/products/categories/[id]", desc: "Update a category. Regenerates slug if name changes." },
+                    { method: "DELETE", path: "/api/products/categories/[id]", desc: "Delete a category." },
+                  ],
+                },
+                {
+                  group: "Product Tags",
+                  routes: [
+                    { method: "GET", path: "/api/products/tags", desc: "List all product tags." },
+                    { method: "POST", path: "/api/products/tags", desc: "Create a tag. Body: { name, slug?, description? }." },
+                    { method: "PUT", path: "/api/products/tags/[id]", desc: "Update a tag." },
+                    { method: "DELETE", path: "/api/products/tags/[id]", desc: "Delete a tag." },
+                  ],
+                },
+                {
+                  group: "Product Attributes & Terms",
+                  routes: [
+                    { method: "GET", path: "/api/products/attributes", desc: "List all attributes with term count." },
+                    { method: "POST", path: "/api/products/attributes", desc: "Create an attribute. Body: { name, slug?, type? }. Type: select | color | button." },
+                    { method: "GET", path: "/api/products/attributes/[id]", desc: "Get a single attribute with full terms list." },
+                    { method: "PUT", path: "/api/products/attributes/[id]", desc: "Update an attribute." },
+                    { method: "DELETE", path: "/api/products/attributes/[id]", desc: "Delete attribute and cascade-delete all its terms." },
+                    { method: "GET", path: "/api/products/attributes/[id]/terms", desc: "List all terms for an attribute, ordered by name." },
+                    { method: "POST", path: "/api/products/attributes/[id]/terms", desc: "Create a term. Body: { name, slug?, description? }. Auto-generates slug. Unique per attribute." },
+                    { method: "PUT", path: "/api/products/attributes/[id]/terms/[termId]", desc: "Update a term's name, slug, or description." },
+                    { method: "DELETE", path: "/api/products/attributes/[id]/terms/[termId]", desc: "Delete a single term." },
+                  ],
+                },
+                {
+                  group: "Setup (Translation)",
+                  routes: [
+                    { method: "GET", path: "/api/setup", desc: "Read translation config from AppConfig: myMemoryEmail, autoTranslate, defaultSourceLanguage." },
+                    { method: "POST", path: "/api/setup", desc: "Save translation config to AppConfig. Body: { myMemoryEmail?, autoTranslate, defaultSourceLanguage }." },
+                  ],
+                },
+                {
+                  group: "Settings — Odoo",
+                  routes: [
+                    { method: "GET", path: "/api/settings/odoo", desc: "Read Odoo config from AppConfig: odooMode, odooUrl, odooDatabase, odooUsername, odooApiKey, odooOnlineSubdomain." },
+                    { method: "POST", path: "/api/settings/odoo", desc: "Save Odoo config to AppConfig (upsert per key). Body: all Odoo config fields." },
+                    { method: "POST", path: "/api/settings/odoo/test", desc: "Test Odoo connection. Authenticates via JSON-RPC /web/session/authenticate. Returns { success, uid, name } or { error }. Handles both on-premise (odooUrl + odooDatabase) and online (odooOnlineSubdomain → {sub}.odoo.com) modes." },
                   ],
                 },
                 {
@@ -676,12 +822,17 @@ Cascade deletes:
                       [<Code key="/sites/id">/sites/[id]</Code>, <Badge key="c3" color="blue">Client</Badge>, "Edit site form. Includes Test Connection button that pings the WooCommerce REST API."],
                       [<Code key="/images">/images</Code>, <Badge key="c-img" color="blue">Client</Badge>, "Image library. Category sidebar (create/rename/delete), search bar, upload zone (drag-and-drop or click), image grid. Select image to edit alt text, category, copy URL, or delete."],
                       [<Code key="/products">/products</Code>, <Badge key="c4" color="blue">Client</Badge>, "Searchable/filterable product table with sync status and live site links."],
-                      [<Code key="/products/new">/products/new</Code>, <Badge key="c5" color="blue">Client</Badge>, "Create product form. Includes ImagePicker (browse library or upload) and website selection for immediate sync. Right panel: MSSQL import search with unmapped columns auto-fill."],
-                      [<Code key="/products/id">/products/[id]</Code>, <Badge key="c6" color="blue">Client</Badge>, "Tabbed product editor: Details (edit fields, manage images via ImagePicker), Translations (auto-translate), Sync (push to sites)."],
+                      [<Code key="/products/new">/products/new</Code>, <Badge key="c5" color="blue">Client</Badge>, "Create product form. Product Type selector (simple/variable). ChipPicker for categories/tags. AttributesPicker for variable products. ImagePicker for images. Site selection for immediate sync. MSSQL import panel."],
+                      [<Code key="/products/id">/products/[id]</Code>, <Badge key="c6" color="blue">Client</Badge>, "Tabbed product editor: Details (fields, translations, per-site pricing with auto currency conversion), Stocks & Attributes (AttributesPicker + stock management), Sync (push to sites)."],
+                      [<Code key="/products/categories">/products/categories</Code>, <Badge key="c-cat" color="blue">Client</Badge>, "WooCommerce-style split layout. Left: create/edit category form (name, slug, parent, description). Right: categories table with hierarchy (sub-count). Edit populates left form."],
+                      [<Code key="/products/tags">/products/tags</Code>, <Badge key="c-tag" color="blue">Client</Badge>, "Same split layout pattern. Flat tag list management (name, slug, description)."],
+                      [<Code key="/products/attributes">/products/attributes</Code>, <Badge key="c-attr" color="blue">Client</Badge>, "Attribute management. Type: select/color/button. Each attribute has a Configure Terms link."],
+                      [<Code key="/products/attributes/id/terms">/products/attributes/[id]/terms</Code>, <Badge key="c-terms" color="blue">Client</Badge>, "Terms management for a specific attribute. Split layout — create/edit term (name, slug, description). Back link to Attributes."],
                       [<Code key="/settings/database">/settings/database</Code>, <Badge key="c8" color="blue">Client</Badge>, "Configure MSSQL connection (host, port, database, credentials, encrypt). Test connection. Define column→field mapping per page including search column and display columns."],
-                      [<Code key="/settings/currency">/settings/currency</Code>, <Badge key="c9" color="blue">Client</Badge>, "Manage currency exchange rates. Add/remove from→to pairs. Fetch live rates per-row or all at once from Frankfurter (ECB). Rates are saved to AppConfig."],
-                      [<Code key="/settings/translation">/settings/translation</Code>, <Badge key="c10" color="blue">Client</Badge>, "Configure LibreTranslate URL, API key, source language, and auto-translate toggle."],
-                      [<Code key="/setup">/setup</Code>, <Badge key="c7" color="blue">Client</Badge>, "Legacy app configuration page (same as /settings/translation)."],
+                      [<Code key="/settings/currency">/settings/currency</Code>, <Badge key="c9" color="blue">Client</Badge>, "Manage currency exchange rates. Add/remove from→to pairs. Fetch live rates per-row or all at once from Frankfurter (ECB). Rates are saved to AppConfig. Base currency is USD — rates used to auto-calculate per-site pricing."],
+                      [<Code key="/settings/translation">/settings/translation</Code>, <Badge key="c10" color="blue">Client</Badge>, "Configure MyMemory translation: optional email for higher daily limit, source language, auto-translate toggle."],
+                      [<Code key="/settings/odoo">/settings/odoo</Code>, <Badge key="c-odoo" color="blue">Client</Badge>, "Odoo integration. Two tabs: On-Premise (URL, database, username, password/API key) and Odoo Online (subdomain, username, API key). Test Connection authenticates via Odoo JSON-RPC and displays logged-in user name + UID."],
+                      [<Code key="/setup">/setup</Code>, <Badge key="c7" color="blue">Client</Badge>, "Legacy redirect → /settings."],
                       [<Code key="/docs">/docs</Code>, <Badge key="s3" color="green">Server</Badge>, "This documentation page."],
                     ]}
                   />
@@ -731,6 +882,16 @@ Cascade deletes:
                   name: "ArchitecturePreview",
                   path: "components/ui/ArchitecturePreview.tsx",
                   desc: "Client component that renders the architecture SVG with a hover zoom hint and opens a fullscreen lightbox on click. Used in the docs page Architecture section. Backdrop click closes the lightbox.",
+                },
+                {
+                  name: "ChipPicker",
+                  path: "components/ui/ChipPicker.tsx",
+                  desc: "Multi-select chip input. Selected items show as blue chips with an X to remove. Live search dropdown filters options. Closes on outside click. Props: label, options [{id, name}], selected (string[]), onChange, placeholder, hint. Used for categories and tags on product forms.",
+                },
+                {
+                  name: "AttributesPicker",
+                  path: "components/ui/AttributesPicker.tsx",
+                  desc: "Attribute + terms selector for variable products. Add Attribute dropdown with Add button. Each added attribute shows its terms as toggle buttons (blue = selected). Exports AttrTerm, AttrOption, AttrSelection interfaces. Only rendered when product type is 'variable'.",
                 },
                 {
                   name: "ImageUploader (legacy)",
@@ -789,8 +950,11 @@ Cascade deletes:
                 },
                 {
                   file: "lib/translation.ts",
-                  title: "LibreTranslate Integration",
-                  desc: "translateProduct(product, targetLanguage, sourceLanguage, config) — calls the LibreTranslate /translate endpoint twice (once for title, once for description). Returns { success, title, description } or { success: false, error }. Reads URL and API key from AppConfig at runtime.",
+                  title: "MyMemory Translation",
+                  desc: [
+                    "translateText(text, targetLang, sourceLang, email?) — calls MyMemory GET API (api.mymemory.translated.net). No API key required. Optional email for higher daily limit (5k → 10k chars/day). Returns { success, translated } or { success: false, error }.",
+                    "translateProduct(product, targetLang, sourceLang, email?, fields?) — translates title, shortDescription, and/or description in sequence. Returns { success, title, shortDescription, description } or { success: false, error }. Fields defaults to all three.",
+                  ],
                 },
               ].map((m) => (
                 <Card key={m.file}>
@@ -877,12 +1041,13 @@ Cascade deletes:
                 <CardContent className="py-4">
                   <ol className="space-y-2 text-sm" style={{ color: "#605e5c" }}>
                     {[
-                      "Ensure LibreTranslate URL is configured in Setup",
-                      "Open a product → go to the Translations tab",
-                      "Select target language from the dropdown",
-                      "Click Translate — calls POST /api/products/[id]/translate",
-                      "The API calls LibreTranslate for title and description, then upserts a ProductTranslation row",
-                      "When this product is synced to a site whose defaultLanguage matches, the translation is used",
+                      "Open a product → Details tab. Language buttons appear at the top right of the Product Information card (one per connected site language)",
+                      "Click a language button (e.g. DA) to switch to translation mode",
+                      "Use 'AI Translate All' to call POST /api/products/[id]/translate — uses MyMemory (free, no key required)",
+                      "Or translate individual fields using the per-field AI button, or type manually",
+                      "Per-site pricing is shown below with auto-converted amounts based on USD→{currency} rates from Settings → Currency. Use '↺ Recalculate' to refresh from the current base price",
+                      "Click Save Translation to upsert a ProductTranslation row for that language",
+                      "When this product is synced to a site whose defaultLanguage matches, the translation title/description/price is used",
                     ].map((step, i) => (
                       <li key={i} className="flex gap-3">
                         <span className="w-5 h-5 shrink-0 flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: "#0078d4" }}>{i + 1}</span>
@@ -950,6 +1115,49 @@ Cascade deletes:
                       "In the Library tab: filter by category, search, and click images to select/deselect them. Click Apply Selection to attach them to the product",
                       "In the Upload New tab: drag files or pick from disk, assign a category and alt text, then click Upload — files are saved to the library and immediately added to the product",
                       "Images uploaded from a product page appear in the Images library and can be reused across other products",
+                    ].map((step, i) => (
+                      <li key={i} className="flex gap-3">
+                        <span className="w-5 h-5 shrink-0 flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: "#0078d4" }}>{i + 1}</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle>Managing categories, tags, and attributes</CardTitle></CardHeader>
+                <CardContent className="py-4">
+                  <ol className="space-y-2 text-sm" style={{ color: "#605e5c" }}>
+                    {[
+                      "Go to Products → Categories (or Tags, or Attributes) in the sidebar dropdown",
+                      "Fill in the left form (name auto-generates slug) and click Add — the item appears in the right table",
+                      "For Attributes: click Configure Terms next to an attribute to manage its values (e.g. Red, Blue for Color)",
+                      "On the product form: ChipPicker lets you search and select categories and tags as chips",
+                      "Set Product Type to 'Variable Product' — the Attributes card appears in the Stocks & Attributes tab",
+                      "Add attributes and toggle which terms apply to this product variant",
+                      "Categories, tags, and attributes sync to WooCommerce when the product is pushed to a site",
+                    ].map((step, i) => (
+                      <li key={i} className="flex gap-3">
+                        <span className="w-5 h-5 shrink-0 flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: "#0078d4" }}>{i + 1}</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle>Setting up Odoo integration</CardTitle></CardHeader>
+                <CardContent className="py-4">
+                  <ol className="space-y-2 text-sm" style={{ color: "#605e5c" }}>
+                    {[
+                      "Go to Settings → Odoo",
+                      "Choose the tab: On-Premise (self-hosted server) or Odoo Online (.odoo.com SaaS)",
+                      "On-Premise: enter Odoo URL (e.g. https://odoo.company.com), database name, login email, and password or API key",
+                      "Odoo Online: enter the subdomain (e.g. 'mycompany' → mycompany.odoo.com), login email, and API key (required — generate in Odoo: Settings → Technical → API Keys)",
+                      "Click Test Connection — authenticates via Odoo JSON-RPC. On success shows logged-in user name + UID",
+                      "Click Save Settings — config is stored in AppConfig under odooMode, odooUrl, odooDatabase, odooUsername, odooApiKey, odooOnlineSubdomain",
                     ].map((step, i) => (
                       <li key={i} className="flex gap-3">
                         <span className="w-5 h-5 shrink-0 flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: "#0078d4" }}>{i + 1}</span>
@@ -1493,6 +1701,61 @@ if (loading) return <div className="text-xs" style={{ color: "#605e5c" }}>Loadin
             {/* CHANGELOG */}
             <Section id="changelog" title="Changelog">
               {[
+                {
+                  version: "Odoo Integration",
+                  date: "Apr 8, 2026",
+                  changes: [
+                    "Added Settings → Odoo page with two tabs: On-Premise (self-hosted) and Odoo Online (SaaS .odoo.com).",
+                    "On-Premise fields: Odoo URL, database name, username, password/API key.",
+                    "Odoo Online fields: subdomain (auto-builds URL preview as you type), username, API key.",
+                    "Test Connection button authenticates via Odoo JSON-RPC (/web/session/authenticate). Shows connected user name + UID on success, detailed error on failure.",
+                    "Config stored in AppConfig under keys: odooMode, odooUrl, odooDatabase, odooUsername, odooApiKey, odooOnlineSubdomain.",
+                    "Added /api/settings/odoo/route.ts (GET/POST) and /api/settings/odoo/test/route.ts (POST).",
+                    "Added 'Odoo' tab to SettingsSubNav with Plug icon.",
+                  ],
+                },
+                {
+                  version: "MyMemory Translation (replaces LibreTranslate)",
+                  date: "Apr 8, 2026",
+                  changes: [
+                    "Replaced LibreTranslate with MyMemory free translation API. No API key or self-hosted server required.",
+                    "Free daily limit: 5,000 chars/IP. Register a free email at mymemory.translated.net for 10,000 chars/day.",
+                    "lib/translation.ts rewritten to call api.mymemory.translated.net/get via GET request.",
+                    "translate/route.ts updated — no longer reads libreTranslateUrl/libreTranslateApiKey. Reads myMemoryEmail from AppConfig.",
+                    "Settings → Translation page updated: removed URL/API key fields, added email field with info banner explaining free limits.",
+                    "/api/setup route updated: schema now uses myMemoryEmail instead of libreTranslate fields.",
+                    "translateProduct() now accepts optional email and fields[] parameters. shortDescription field added to translation support.",
+                  ],
+                },
+                {
+                  version: "Currency Auto-Conversion on Per-Site Pricing",
+                  date: "Apr 8, 2026",
+                  changes: [
+                    "Base product price is now treated as USD. When switching to a language tab (e.g. DA, ES), the per-site price auto-calculates using the USD→{currency} rate from Settings → Currency.",
+                    "Auto-conversion only fires if no price has been entered yet for that language — it never overwrites existing values.",
+                    "Sale price is also auto-converted when a base sale price is set.",
+                    "Added '↺ Recalculate' button in the translation pricing section — forces recalculation from the current base price.",
+                    "Exchange rate label shown inline (e.g. '1 USD = 7.4512 DKK'). Warning shown if no matching rate is configured.",
+                    "currencyRates state loaded from /api/settings/currency on edit page mount.",
+                  ],
+                },
+                {
+                  version: "Product Type, Categories, Tags & Attributes",
+                  date: "Apr 8, 2026",
+                  changes: [
+                    "Restored Product Type selector (Simple Product / Variable Product) to both new and edit product forms. Value sent to WooCommerce on sync.",
+                    "Added ProductCategory, ProductTag, ProductAttribute, ProductAttributeTerm models to Prisma schema. Migrated to live DB via prisma db push.",
+                    "Added sidebar Products dropdown with sub-items: All Products, Categories, Tags, Attributes (collapsible, auto-expands on /products/* routes).",
+                    "Added WooCommerce-style split layout management pages for Categories, Tags, and Attributes. Attributes have a Configure Terms link per row.",
+                    "Added /products/attributes/[id]/terms/page.tsx for per-attribute term management.",
+                    "Added full CRUD API routes for categories, tags, attributes, and terms — all with try/catch and proper JSON error responses.",
+                    "Created ChipPicker component — multi-select chip input with live search dropdown. Used for categories and tags on both new and edit product forms.",
+                    "Created AttributesPicker component — attribute+terms selector (toggle buttons per term). Only rendered when productType === 'variable'.",
+                    "Product.attributes stored as JSON array of self-contained {id, name, slug, terms[]} objects. Product.categories and .tags stored as JSON arrays of name strings.",
+                    "Attributes card moved to Stocks & Attributes tab in the edit page.",
+                    "Dashboard shown above Products in sidebar. Sidebar refactored into topItems (Dashboard) + Products dropdown + navItems.",
+                  ],
+                },
                 {
                   version: "Image Management & PostgreSQL Migration",
                   date: "Apr 7, 2026",

@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 720" font-family="Segoe UI, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 800" font-family="Segoe UI, Arial, sans-serif">
 
   <!-- Background -->
-  <rect width="1060" height="720" fill="#f8f9fa"/>
+  <rect width="1060" height="800" fill="#f8f9fa"/>
 
   <!-- Title -->
   <text x="530" y="36" text-anchor="middle" font-size="19" font-weight="bold" fill="#0078d4">STEPv5 WC — System Integration Overview</text>
@@ -55,9 +55,9 @@
 
   <rect x="524" y="116" width="186" height="72" rx="6" fill="#eff6fc" stroke="#0078d4" stroke-width="1"/>
   <text x="617" y="133" text-anchor="middle" font-size="10" font-weight="bold" fill="#0078d4">📦 Product Manager</text>
-  <text x="617" y="148" text-anchor="middle" font-size="8.5" fill="#605e5c">Create · Edit · Image Upload</text>
-  <text x="617" y="161" text-anchor="middle" font-size="8.5" fill="#605e5c">Multi-language Translations</text>
-  <text x="617" y="174" text-anchor="middle" font-size="8.5" fill="#605e5c">Sync Status per Site</text>
+  <text x="617" y="148" text-anchor="middle" font-size="8.5" fill="#605e5c">Simple / Variable Products</text>
+  <text x="617" y="161" text-anchor="middle" font-size="8.5" fill="#605e5c">Categories · Tags · Attributes</text>
+  <text x="617" y="174" text-anchor="middle" font-size="8.5" fill="#605e5c">Multi-language · Sync Status</text>
 
   <rect x="326" y="198" width="186" height="62" rx="6" fill="#eff6fc" stroke="#0078d4" stroke-width="1"/>
   <text x="419" y="215" text-anchor="middle" font-size="10" font-weight="bold" fill="#0078d4">🌐 Site Manager</text>
@@ -68,44 +68,45 @@
   <rect x="524" y="198" width="186" height="62" rx="6" fill="#eff6fc" stroke="#0078d4" stroke-width="1"/>
   <text x="617" y="215" text-anchor="middle" font-size="10" font-weight="bold" fill="#0078d4">⚙️ Settings</text>
   <text x="617" y="230" text-anchor="middle" font-size="8.5" fill="#605e5c">MSSQL Connection Config</text>
-  <text x="617" y="243" text-anchor="middle" font-size="8.5" fill="#605e5c">Table Field Mappings per Page</text>
-  <text x="617" y="255" text-anchor="middle" font-size="8.5" fill="#605e5c">Currency Rates · Translation</text>
+  <text x="617" y="243" text-anchor="middle" font-size="8.5" fill="#605e5c">Currency Rates · Translation</text>
+  <text x="617" y="255" text-anchor="middle" font-size="8.5" fill="#605e5c">Odoo Integration Config</text>
 
   <line x1="326" y1="274" x2="714" y2="274" stroke="#edebe9" stroke-width="1.5" stroke-dasharray="5,3"/>
   <text x="520" y="288" text-anchor="middle" font-size="9" fill="#a19f9d" font-style="italic">Next.js API Route Handlers</text>
 
-  <rect x="326" y="296" width="382" height="80" rx="6" fill="#f3f2f1" stroke="#c8c6c4" stroke-width="1"/>
+  <rect x="326" y="296" width="382" height="96" rx="6" fill="#f3f2f1" stroke="#c8c6c4" stroke-width="1"/>
   <text x="342" y="313" font-size="8.5" fill="#605e5c">/api/users  ·  /api/users/[id]  ·  /api/activity</text>
   <text x="342" y="328" font-size="8.5" fill="#605e5c">/api/products  ·  /api/products/[id]  ·  /api/products/[id]/sync</text>
-  <text x="342" y="343" font-size="8.5" fill="#605e5c">/api/sites  ·  /api/products/[id]/translate</text>
-  <text x="342" y="358" font-size="8.5" fill="#605e5c">/api/settings/mssql  ·  /api/settings/mssql/search  ·  /api/settings/currency</text>
-  <text x="342" y="370" font-size="8.5" fill="#605e5c">/api/auth  ·  /api/setup  ·  /api/uploads</text>
+  <text x="342" y="343" font-size="8.5" fill="#605e5c">/api/products/[id]/translate  ·  /api/sites  ·  /api/upload</text>
+  <text x="342" y="358" font-size="8.5" fill="#605e5c">/api/products/categories  ·  /api/products/tags  ·  /api/products/attributes</text>
+  <text x="342" y="373" font-size="8.5" fill="#605e5c">/api/settings/mssql  ·  /api/settings/currency  ·  /api/settings/odoo</text>
+  <text x="342" y="386" font-size="8.5" fill="#605e5c">/api/auth  ·  /api/setup  ·  /api/uploads</text>
 
-  <rect x="326" y="388" width="182" height="56" rx="6" fill="#fff4ce" stroke="#f0c929" stroke-width="1"/>
-  <text x="417" y="406" text-anchor="middle" font-size="10" font-weight="bold" fill="#835b00">🔐 NextAuth.js v4</text>
-  <text x="417" y="421" text-anchor="middle" font-size="8.5" fill="#605e5c">Credentials Provider · JWT</text>
-  <text x="417" y="434" text-anchor="middle" font-size="8.5" fill="#605e5c">Session · Role-based Access</text>
+  <rect x="326" y="404" width="182" height="56" rx="6" fill="#fff4ce" stroke="#f0c929" stroke-width="1"/>
+  <text x="417" y="422" text-anchor="middle" font-size="10" font-weight="bold" fill="#835b00">🔐 NextAuth.js v4</text>
+  <text x="417" y="437" text-anchor="middle" font-size="8.5" fill="#605e5c">Credentials Provider · JWT</text>
+  <text x="417" y="450" text-anchor="middle" font-size="8.5" fill="#605e5c">Session · Role-based Access</text>
 
-  <rect x="520" y="388" width="190" height="56" rx="6" fill="#fff4ce" stroke="#f0c929" stroke-width="1"/>
-  <text x="615" y="406" text-anchor="middle" font-size="10" font-weight="bold" fill="#835b00">🗄️ Prisma 6 ORM</text>
-  <text x="615" y="421" text-anchor="middle" font-size="8.5" fill="#605e5c">PostgreSQL driver · Type-safe</text>
-  <text x="615" y="434" text-anchor="middle" font-size="8.5" fill="#605e5c">CUID IDs · Cascade deletes</text>
+  <rect x="520" y="404" width="190" height="56" rx="6" fill="#fff4ce" stroke="#f0c929" stroke-width="1"/>
+  <text x="615" y="422" text-anchor="middle" font-size="10" font-weight="bold" fill="#835b00">🗄️ Prisma 6 ORM</text>
+  <text x="615" y="437" text-anchor="middle" font-size="8.5" fill="#605e5c">PostgreSQL driver · Type-safe</text>
+  <text x="615" y="450" text-anchor="middle" font-size="8.5" fill="#605e5c">CUID IDs · Cascade deletes</text>
 
-  <rect x="326" y="456" width="382" height="130" rx="6" fill="#f3f2f1" stroke="#c8c6c4" stroke-width="1"/>
-  <text x="517" y="473" text-anchor="middle" font-size="10" font-weight="bold" fill="#323130">Additional Modules</text>
-  <line x1="326" y1="479" x2="708" y2="479" stroke="#edebe9" stroke-width="1"/>
-  <text x="342" y="496" font-size="8.5" font-weight="bold" fill="#0078d4">📄 Documentation</text>
-  <text x="342" y="510" font-size="8" fill="#605e5c">Built-in docs · Export .doc / PDF</text>
-  <text x="342" y="523" font-size="8" fill="#605e5c">Word DOM walker · Tailwind PDF</text>
-  <text x="342" y="540" font-size="8.5" font-weight="bold" fill="#0078d4">💱 Currency Rates</text>
-  <text x="342" y="554" font-size="8" fill="#605e5c">Frankfurter (ECB) live rates</text>
-  <text x="342" y="567" font-size="8" fill="#605e5c">Stored in AppConfig as JSON</text>
-  <text x="530" y="496" font-size="8.5" font-weight="bold" fill="#0078d4">🌍 LibreTranslate</text>
-  <text x="530" y="510" font-size="8" fill="#605e5c">Auto-translate product fields</text>
-  <text x="530" y="523" font-size="8" fill="#605e5c">Configurable URL + API key</text>
-  <text x="530" y="540" font-size="8.5" font-weight="bold" fill="#0078d4">📊 Admin Dashboard</text>
-  <text x="530" y="554" font-size="8" fill="#605e5c">Activity feed · Stats overview</text>
-  <text x="530" y="567" font-size="8" fill="#605e5c">Quick actions · Recent syncs</text>
+  <rect x="326" y="472" width="382" height="130" rx="6" fill="#f3f2f1" stroke="#c8c6c4" stroke-width="1"/>
+  <text x="517" y="489" text-anchor="middle" font-size="10" font-weight="bold" fill="#323130">Additional Modules</text>
+  <line x1="326" y1="495" x2="708" y2="495" stroke="#edebe9" stroke-width="1"/>
+  <text x="342" y="512" font-size="8.5" font-weight="bold" fill="#0078d4">📄 Documentation</text>
+  <text x="342" y="526" font-size="8" fill="#605e5c">Built-in docs · Export .doc / PDF</text>
+  <text x="342" y="539" font-size="8" fill="#605e5c">Word DOM walker · Tailwind PDF</text>
+  <text x="342" y="556" font-size="8.5" font-weight="bold" fill="#0078d4">💱 Currency Rates</text>
+  <text x="342" y="570" font-size="8" fill="#605e5c">Frankfurter (ECB) live rates</text>
+  <text x="342" y="583" font-size="8" fill="#605e5c">Stored in AppConfig as JSON</text>
+  <text x="530" y="512" font-size="8.5" font-weight="bold" fill="#0078d4">🌍 MyMemory Translation</text>
+  <text x="530" y="526" font-size="8" fill="#605e5c">Free API · No key required</text>
+  <text x="530" y="539" font-size="8" fill="#605e5c">5k–10k chars/day · Optional email</text>
+  <text x="530" y="556" font-size="8.5" font-weight="bold" fill="#0078d4">📊 Admin Dashboard</text>
+  <text x="530" y="570" font-size="8" fill="#605e5c">Activity feed · Stats overview</text>
+  <text x="530" y="583" font-size="8" fill="#605e5c">Quick actions · Recent syncs</text>
 
   <!-- ══════════════════════════════════════════════════════ -->
   <!-- RIGHT COLUMN: WooCommerce Sites                      -->
@@ -138,15 +139,53 @@
   <text x="910" y="365" text-anchor="middle" font-size="8.5" fill="#605e5c">Sync status tracked in DB</text>
 
   <!-- ══════════════════════════════════════════════════════ -->
+  <!-- RIGHT COLUMN: Odoo ERP                               -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <rect x="800" y="408" width="220" height="194" rx="10" fill="#fff" stroke="#038387" stroke-width="1.5"/>
+  <rect x="800" y="408" width="220" height="42" rx="10" fill="#038387"/>
+  <rect x="800" y="436" width="220" height="14" fill="#038387"/>
+  <text x="910" y="429" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">Odoo ERP</text>
+  <text x="910" y="447" text-anchor="middle" font-size="9" fill="#b2e0e2">On-Premise · Odoo Online (SaaS)</text>
+
+  <rect x="818" y="455" width="184" height="46" rx="5" fill="#e0f5f5" stroke="#038387" stroke-width="1"/>
+  <text x="910" y="471" text-anchor="middle" font-size="10" font-weight="bold" fill="#038387">🖥️ On-Premise</text>
+  <text x="910" y="485" text-anchor="middle" font-size="8.5" fill="#605e5c">URL + Database + Username</text>
+  <text x="910" y="497" text-anchor="middle" font-size="8.5" fill="#605e5c">Password or API Key</text>
+
+  <rect x="818" y="509" width="184" height="46" rx="5" fill="#e0f5f5" stroke="#038387" stroke-width="1"/>
+  <text x="910" y="525" text-anchor="middle" font-size="10" font-weight="bold" fill="#038387">☁️ Odoo Online</text>
+  <text x="910" y="539" text-anchor="middle" font-size="8.5" fill="#605e5c">*.odoo.com · Subdomain</text>
+  <text x="910" y="551" text-anchor="middle" font-size="8.5" fill="#605e5c">API Key required</text>
+
+  <line x1="818" y1="564" x2="1002" y2="564" stroke="#edebe9" stroke-width="1"/>
+  <text x="910" y="579" text-anchor="middle" font-size="8.5" fill="#a19f9d">JSON-RPC Authentication</text>
+  <text x="910" y="593" text-anchor="middle" font-size="8.5" fill="#605e5c">Settings → Odoo → Test Connection</text>
+
+  <!-- ══════════════════════════════════════════════════════ -->
   <!-- BOTTOM: PostgreSQL                                   -->
   <!-- ══════════════════════════════════════════════════════ -->
-  <rect x="340" y="624" width="380" height="82" rx="10" fill="#fff" stroke="#107c10" stroke-width="1.5"/>
-  <rect x="340" y="624" width="380" height="36" rx="10" fill="#107c10"/>
-  <rect x="340" y="646" width="380" height="14" fill="#107c10"/>
-  <text x="530" y="645" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">PostgreSQL — Simply.com</text>
-  <text x="530" y="660" text-anchor="middle" font-size="9" fill="#c8e6c9">pgsql1.simply.com · sal_tech_com_db_stepv5_mwa</text>
-  <text x="530" y="678" text-anchor="middle" font-size="8.5" fill="#605e5c">Users · Roles · Products · Sites · ProductSync · ProductTranslation</text>
-  <text x="530" y="693" text-anchor="middle" font-size="8.5" fill="#605e5c">AppConfig · MssqlConnection · MssqlTableMapping · ActivityLog</text>
+  <rect x="340" y="664" width="380" height="100" rx="10" fill="#fff" stroke="#107c10" stroke-width="1.5"/>
+  <rect x="340" y="664" width="380" height="36" rx="10" fill="#107c10"/>
+  <rect x="340" y="686" width="380" height="14" fill="#107c10"/>
+  <text x="530" y="685" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">PostgreSQL — Simply.com</text>
+  <text x="530" y="700" text-anchor="middle" font-size="9" fill="#c8e6c9">pgsql1.simply.com · sal_tech_com_db_stepv5_mwa</text>
+  <text x="530" y="718" text-anchor="middle" font-size="8.5" fill="#605e5c">Users · Roles · Products · Sites · ProductSync · ProductTranslation</text>
+  <text x="530" y="733" text-anchor="middle" font-size="8.5" fill="#605e5c">ProductCategory · ProductTag · ProductAttribute · ProductAttributeTerm</text>
+  <text x="530" y="748" text-anchor="middle" font-size="8.5" fill="#605e5c">AppConfig · MssqlConnection · MssqlTableMapping · ActivityLog · Image</text>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- LEGEND                                               -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <rect x="30" y="664" width="284" height="100" rx="8" fill="#fff" stroke="#c8c6c4" stroke-width="1"/>
+  <text x="46" y="682" font-size="9" font-weight="bold" fill="#323130">Legend</text>
+  <line x1="46" y1="696" x2="80" y2="696" stroke="#d13438" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <text x="87" y="700" font-size="8.5" fill="#605e5c">MSSQL live data search / import</text>
+  <line x1="46" y1="714" x2="80" y2="714" stroke="#7719aa" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+  <text x="87" y="718" font-size="8.5" fill="#605e5c">WooCommerce REST API push</text>
+  <line x1="46" y1="732" x2="80" y2="732" stroke="#107c10" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <text x="87" y="736" font-size="8.5" fill="#605e5c">PostgreSQL via Prisma ORM</text>
+  <line x1="46" y1="750" x2="80" y2="750" stroke="#038387" stroke-width="1.5" marker-end="url(#arrowTeal)"/>
+  <text x="87" y="754" font-size="8.5" fill="#605e5c">Odoo JSON-RPC integration</text>
 
   <!-- ══════════════════════════════════════════════════════ -->
   <!-- ARROWS                                               -->
@@ -167,22 +206,17 @@
   <rect x="735" y="196" width="62" height="13" rx="3" fill="#f4f0fa"/>
   <text x="766" y="206" text-anchor="middle" font-size="7.5" fill="#7719aa">Product sync</text>
 
-  <line x1="520" y1="603" x2="520" y2="622" stroke="#107c10" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
-  <rect x="432" y="603" width="176" height="14" rx="3" fill="#dff6dd"/>
-  <text x="520" y="613" text-anchor="middle" font-size="7.5" fill="#107c10">Prisma 6 ORM · Read / Write</text>
+  <line x1="732" y1="505" x2="798" y2="505" stroke="#038387" stroke-width="1.5" marker-end="url(#arrowTeal)"/>
+  <rect x="735" y="491" width="62" height="13" rx="3" fill="#e0f5f5"/>
+  <text x="766" y="501" text-anchor="middle" font-size="7.5" fill="#038387">JSON-RPC API</text>
+
+  <line x1="520" y1="602" x2="520" y2="662" stroke="#107c10" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <rect x="432" y="622" width="176" height="14" rx="3" fill="#dff6dd"/>
+  <text x="520" y="632" text-anchor="middle" font-size="7.5" fill="#107c10">Prisma 6 ORM · Read / Write</text>
 
   <!-- ══════════════════════════════════════════════════════ -->
-  <!-- LEGEND                                               -->
+  <!-- DEFS                                                 -->
   <!-- ══════════════════════════════════════════════════════ -->
-  <rect x="30" y="624" width="284" height="82" rx="8" fill="#fff" stroke="#c8c6c4" stroke-width="1"/>
-  <text x="46" y="642" font-size="9" font-weight="bold" fill="#323130">Legend</text>
-  <line x1="46" y1="658" x2="80" y2="658" stroke="#d13438" stroke-width="1.5" marker-end="url(#arrowRed)"/>
-  <text x="87" y="662" font-size="8.5" fill="#605e5c">MSSQL live data search / import</text>
-  <line x1="46" y1="676" x2="80" y2="676" stroke="#7719aa" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
-  <text x="87" y="680" font-size="8.5" fill="#605e5c">WooCommerce REST API push</text>
-  <line x1="46" y1="694" x2="80" y2="694" stroke="#107c10" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
-  <text x="87" y="698" font-size="8.5" fill="#605e5c">PostgreSQL via Prisma ORM</text>
-
   <defs>
     <marker id="arrowRed" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="#d13438"/>
@@ -192,6 +226,9 @@
     </marker>
     <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="#107c10"/>
+    </marker>
+    <marker id="arrowTeal" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#038387"/>
     </marker>
   </defs>
 
