@@ -2,9 +2,42 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { Client } from "basic-ftp";
+import { Readable } from "stream";
 import { randomUUID } from "crypto";
+
+const FTP_HOST = process.env.FTP_HOST!;
+const FTP_USER = process.env.FTP_USER!;
+const FTP_PASS = process.env.FTP_PASS!;
+const FTP_PORT = parseInt(process.env.FTP_PORT || "21");
+const FTP_UPLOAD_DIR = process.env.FTP_UPLOAD_DIR || "/wc/images";
+const FTP_PUBLIC_URL = process.env.FTP_PUBLIC_URL || "http://wc.stepv5.com/images";
+
+async function uploadViaFtp(buffer: Buffer, filename: string): Promise<string> {
+  const client = new Client();
+  client.ftp.verbose = false;
+
+  try {
+    await client.access({
+      host: FTP_HOST,
+      user: FTP_USER,
+      password: FTP_PASS,
+      port: FTP_PORT,
+      secure: false,
+    });
+
+    // Ensure upload directory exists
+    await client.ensureDir(FTP_UPLOAD_DIR);
+
+    // Upload file from buffer via readable stream
+    const stream = Readable.from(buffer);
+    await client.uploadFrom(stream, filename);
+
+    return `${FTP_PUBLIC_URL.replace(/\/$/, "")}/${filename}`;
+  } finally {
+    client.close();
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +48,6 @@ export async function POST(req: NextRequest) {
     const file = formData.get("file") as File | null;
     const categoryId = formData.get("categoryId") as string | null;
     const alt = formData.get("alt") as string | null;
-    // When saveToLibrary=false the file is uploaded but NOT saved to the Image model
     const saveToLibrary = formData.get("saveToLibrary") !== "false";
 
     if (!file) {
@@ -33,16 +65,9 @@ export async function POST(req: NextRequest) {
 
     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
     const filename = `${randomUUID()}.${ext}`;
-    const uploadDir = join(process.cwd(), "public", "uploads");
-
-    // Ensure uploads directory exists
-    await mkdir(uploadDir, { recursive: true });
-
-    const filepath = join(uploadDir, filename);
     const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(filepath, buffer);
 
-    const url = `/uploads/${filename}`;
+    const url = await uploadViaFtp(buffer, filename);
 
     if (saveToLibrary) {
       const image = await prisma.image.create({
