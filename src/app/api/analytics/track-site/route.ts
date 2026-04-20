@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
       path?: string;
       visitorId?: string;
       referer?: string;
+      duration?: number;
     };
 
     const siteId = body.siteId?.trim();
@@ -54,11 +55,12 @@ export async function POST(req: NextRequest) {
     const path = body.path || "/";
     const visitorId = body.visitorId || null;
     const referer = body.referer || null;
+    const duration = typeof body.duration === "number" && body.duration > 0 ? Math.round(body.duration) : null;
     const ua = req.headers.get("user-agent") || "";
     const { device, browser, os } = parseUA(ua);
 
     await prisma.wooPageView.create({
-      data: { siteId, path, visitorId, device, browser, os, referer },
+      data: { siteId, path, visitorId, device, browser, os, referer, duration },
     });
 
     return NextResponse.json({ ok: true }, { headers: CORS_HEADERS });

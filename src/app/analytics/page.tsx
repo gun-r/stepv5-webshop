@@ -15,9 +15,6 @@ import {
   Globe,
   RefreshCw,
   TrendingUp,
-  Monitor,
-  Smartphone,
-  Tablet,
   MapPin,
   Eye,
   AlertTriangle,
@@ -36,20 +33,12 @@ interface SyncRecent {
 }
 interface TrendPoint { date: string; synced: number; error: number }
 interface ActivityEntry { action: string; count: number }
-interface PageViewsData {
-  total: number;
-  devices: { name: string; count: number }[];
-  browsers: { name: string; count: number }[];
-  os: { name: string; count: number }[];
-  topPages: { path: string; count: number; unique: number; returning: number }[];
-}
 interface InternalData {
   products: { total: number; published: number; draft: number };
   syncs: { stats: Record<string, number>; recent: SyncRecent[] };
   trend: TrendPoint[];
   activity: ActivityEntry[];
   sites: Site[];
-  pageViews: PageViewsData;
 }
 
 interface WooOrder {
@@ -65,11 +54,18 @@ interface AbandonedOrder {
   items: { name: string; quantity: number }[];
   date: string; hoursAgo: number;
 }
+interface TrafficPoint { date: string; pageViews: number; visitors: number }
+interface AvgTimePage { path: string; avgMs: number; count: number }
 interface WooData {
   totalOrders: number | null;
   sales: { total_sales: string; net_revenue: string; total_orders: number; total_items: number } | null;
   totalCustomers: number | null;
   totalWooProducts: number | null;
+  totalVisitors: number;
+  totalPageViews: number;
+  productsCommissioned: number | null;
+  trafficTrend: TrafficPoint[];
+  avgTimePerPage: AvgTimePage[];
   recentOrders: WooOrder[];
   topProducts: TopProduct[];
   orderLocations: LocationEntry[];
@@ -98,20 +94,32 @@ const ACTION_COLOR: Record<string, string> = {
   "user.delete": "#a4262c",
 };
 
-const DEVICE_COLORS: Record<string, string> = {
-  desktop: "#0078d4", mobile: "#107c10", tablet: "#6b2fa0",
-};
-const DEVICE_ICONS: Record<string, React.ElementType> = {
-  desktop: Monitor, mobile: Smartphone, tablet: Tablet,
-};
+const PI_COLORS = ["#0078d4", "#107c10", "#6b2fa0", "#8a6914", "#a4262c", "#00b7c3", "#d83b01", "#038387", "#ca5010", "#8764b8"];
 
 function statusColor(s: string) {
   return STATUS_COLOR[s] ?? { bg: "#f3f2f1", text: "#605e5c" };
 }
 
-function BarRow({
-  label, value, max, color = "#0078d4",
-}: { label: string; value: number; max: number; color?: string }) {
+function fmtDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return rem > 0 ? `${m}m ${rem}s` : `${m}m`;
+}
+
+function SectionLabel({ icon: Icon, label, sub }: { icon: React.ElementType; label: string; sub?: string }) {
+  return (
+    <div className="flex items-center gap-2 pt-2">
+      <Icon size={12} style={{ color: "#605e5c" }} />
+      <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>{label}</span>
+      {sub && <span className="text-xs" style={{ color: "#a19f9d" }}>{sub}</span>}
+    </div>
+  );
+}
+
+function BarRow({ label, value, max, color = "#0078d4" }: { label: string; value: number; max: number; color?: string }) {
   return (
     <div>
       <div className="flex justify-between mb-1">
@@ -137,11 +145,17 @@ function TrackingSnippet({ siteId }: { siteId: string }) {
     var i=Math.random().toString(36).slice(2)+Date.now().toString(36);
     localStorage.setItem('_wsv',i);return i;
   })();
-  fetch('${appUrl}/api/analytics/track-site',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({siteId:'${siteId}',path:location.pathname,visitorId:v,referer:document.referrer||null})
-  }).catch(function(){});
+  var t=Date.now(),sent=false;
+  function send(){
+    if(sent)return;sent=true;
+    var d=Math.round(Date.now()-t);
+    var u='${appUrl}/api/analytics/track-site';
+    var b=JSON.stringify({siteId:'${siteId}',path:location.pathname,visitorId:v,referer:document.referrer||null,duration:d});
+    if(navigator.sendBeacon){navigator.sendBeacon(u,new Blob([b],{type:'application/json'}));}
+    else{fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:b,keepalive:true}).catch(function(){});}
+  }
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')send();});
+  window.addEventListener('pagehide',send);
 })();
 </script>
 <?php }, 99);`;
@@ -164,9 +178,7 @@ function TrackingSnippet({ siteId }: { siteId: string }) {
       <button
         onClick={copy}
         className="absolute top-2 right-2 px-2 py-1 text-xs font-medium"
-        style={copied
-          ? { backgroundColor: "#107c10", color: "#fff" }
-          : { backgroundColor: "#0078d4", color: "#fff" }}
+        style={copied ? { backgroundColor: "#107c10", color: "#fff" } : { backgroundColor: "#0078d4", color: "#fff" }}
       >
         {copied ? "Copied!" : "Copy"}
       </button>
@@ -211,29 +223,19 @@ export default function AnalyticsPage() {
   const synced  = internal?.syncs.stats["synced"]  ?? 0;
   const pending = internal?.syncs.stats["pending"] ?? 0;
   const errors  = internal?.syncs.stats["error"]   ?? 0;
-
-  const trend     = internal?.trend ?? [];
-  const maxTrend  = Math.max(...trend.map((t) => t.synced + t.error), 1);
+  const trend   = internal?.trend ?? [];
+  const maxTrend    = Math.max(...trend.map((t) => t.synced + t.error), 1);
   const maxActivity = Math.max(...(internal?.activity.map((a) => a.count) ?? [1]), 1);
-
-  const pv         = internal?.pageViews;
-  const totalViews = pv?.total ?? 0;
-  const maxDevice  = Math.max(...(pv?.devices.map((d) => d.count) ?? [1]), 1);
-  const maxBrowser = Math.max(...(pv?.browsers.map((b) => b.count) ?? [1]), 1);
-  const maxOs      = Math.max(...(pv?.os.map((o) => o.count) ?? [1]), 1);
-  const activeTopPages = siteId ? (woo?.topPages ?? []) : (pv?.topPages ?? []);
-  const maxPage = Math.max(...activeTopPages.map((p) => p.count), 1);
-
   const maxLocation = Math.max(...(woo?.orderLocations.map((l) => l.count) ?? [1]), 1);
   const maxViewed   = Math.max(...(woo?.mostViewedProducts.map((p) => p.sales) ?? [1]), 1);
-
   const dash = loadingInternal ? "—" : undefined;
+  const siteName = internal?.sites.find((s) => s.id === siteId)?.name ?? "";
 
   return (
     <div className="flex min-h-screen">
       <Sidebar />
       <div className="flex-1 flex flex-col">
-        <Header title="Analytics" subtitle="Site activity, sync performance, and WooCommerce insights" />
+        <Header title="Analytics" subtitle="Store performance, traffic, and sync insights" />
         <main className="flex-1 p-4 space-y-4">
 
           {/* ── Site selector ── */}
@@ -260,13 +262,14 @@ export default function AnalyticsPage() {
             </button>
           </div>
 
-          {/* ── Internal stat cards ── */}
+          {/* ── Sync stats ── */}
+          <SectionLabel icon={Package} label="Product Sync" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
             {[
-              { label: "Total Products", value: dash ?? internal?.products.total, sub: `${internal?.products.published ?? 0} published · ${internal?.products.draft ?? 0} draft`, icon: Package, iconStyle: { backgroundColor: "#f4f0ff", color: "#6b2fa0" } },
-              { label: "Synced",  value: dash ?? synced,  sub: "successful syncs",  icon: CheckCircle, iconStyle: { backgroundColor: "#dff6dd", color: "#107c10" } },
-              { label: "Pending", value: dash ?? pending, sub: "awaiting sync",     icon: Clock,       iconStyle: { backgroundColor: "#fff4ce", color: "#8a6914" } },
-              { label: "Errors",  value: dash ?? errors,  sub: "failed syncs",      icon: XCircle,     iconStyle: { backgroundColor: "#fde7e9", color: "#a4262c" } },
+              { label: "Total Products", value: dash ?? internal?.products.total, sub: `${internal?.products.published ?? 0} published · ${internal?.products.draft ?? 0} draft`, icon: Package,      iconStyle: { backgroundColor: "#f4f0ff", color: "#6b2fa0" } },
+              { label: "Synced",         value: dash ?? synced,                   sub: "successful syncs",                                                                          icon: CheckCircle, iconStyle: { backgroundColor: "#dff6dd", color: "#107c10" } },
+              { label: "Pending",        value: dash ?? pending,                  sub: "awaiting sync",                                                                             icon: Clock,       iconStyle: { backgroundColor: "#fff4ce", color: "#8a6914" } },
+              { label: "Errors",         value: dash ?? errors,                   sub: "failed syncs",                                                                              icon: XCircle,     iconStyle: { backgroundColor: "#fde7e9", color: "#a4262c" } },
             ].map((stat) => {
               const Icon = stat.icon;
               return (
@@ -286,22 +289,19 @@ export default function AnalyticsPage() {
             })}
           </div>
 
-          {/* ── WooCommerce stat cards ── */}
+          {/* ── WooCommerce section (site selected only) ── */}
           {siteId && (
             <>
-              <div className="flex items-center gap-2">
-                <Globe size={12} style={{ color: "#0078d4" }} />
-                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#0078d4" }}>
-                  WooCommerce Store
-                </span>
-                {loadingWoo && <span className="text-xs" style={{ color: "#a19f9d" }}>Loading…</span>}
-              </div>
+              {/* Store KPIs */}
+              <SectionLabel icon={Globe} label={`WooCommerce — ${siteName}`} sub={loadingWoo ? "Loading…" : undefined} />
+              {wooError && <p className="text-xs" style={{ color: "#a4262c" }}>{wooError}</p>}
+
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                 {[
-                  { label: "Total Orders",   value: loadingWoo ? "—" : (woo?.totalOrders ?? "—"),    icon: ShoppingCart, iconStyle: { backgroundColor: "#deecf9", color: "#0078d4" } },
-                  { label: "Revenue (30 d)", value: loadingWoo ? "—" : (woo?.sales ? parseFloat(woo.sales.total_sales).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—"), icon: DollarSign, iconStyle: { backgroundColor: "#dff6dd", color: "#107c10" } },
-                  { label: "Customers",      value: loadingWoo ? "—" : (woo?.totalCustomers ?? "—"),  icon: Users,       iconStyle: { backgroundColor: "#f4f0ff", color: "#6b2fa0" } },
-                  { label: "Live Products",  value: loadingWoo ? "—" : (woo?.totalWooProducts ?? "—"),icon: TrendingUp,  iconStyle: { backgroundColor: "#fff4ce", color: "#8a6914" } },
+                  { label: "Total Orders",      value: loadingWoo ? "—" : (woo?.totalOrders ?? "—"),       icon: ShoppingCart, iconStyle: { backgroundColor: "#deecf9", color: "#0078d4" } },
+                  { label: "Revenue (30 d)",    value: loadingWoo ? "—" : (woo?.sales ? parseFloat(woo.sales.total_sales).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—"), icon: DollarSign, iconStyle: { backgroundColor: "#dff6dd", color: "#107c10" } },
+                  { label: "Net Revenue (30 d)",value: loadingWoo ? "—" : (woo?.sales ? parseFloat(woo.sales.net_revenue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—"),  icon: TrendingUp, iconStyle: { backgroundColor: "#fff4ce", color: "#8a6914" } },
+                  { label: "Customers",         value: loadingWoo ? "—" : (woo?.totalCustomers ?? "—"),    icon: Users,        iconStyle: { backgroundColor: "#f4f0ff", color: "#6b2fa0" } },
                 ].map((stat) => {
                   const Icon = stat.icon;
                   return (
@@ -319,11 +319,434 @@ export default function AnalyticsPage() {
                   );
                 })}
               </div>
-              {wooError && <p className="text-xs" style={{ color: "#a4262c" }}>{wooError}</p>}
+
+              {/* Traffic KPIs */}
+              <SectionLabel icon={Eye} label="Traffic — Last 30 Days" />
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                {[
+                  { label: "Page Views",         value: loadingWoo ? "—" : (woo?.totalPageViews ?? 0),        icon: Eye,         iconStyle: { backgroundColor: "#deecf9", color: "#0078d4" } },
+                  { label: "Unique Visitors",    value: loadingWoo ? "—" : (woo?.totalVisitors ?? 0),         icon: Users,       iconStyle: { backgroundColor: "#dff6dd", color: "#107c10" } },
+                  { label: "Products Ordered",   value: loadingWoo ? "—" : (woo?.productsCommissioned ?? "—"),icon: Package,     iconStyle: { backgroundColor: "#f4f0ff", color: "#6b2fa0" } },
+                  { label: "Live Products",      value: loadingWoo ? "—" : (woo?.totalWooProducts ?? "—"),    icon: TrendingUp,  iconStyle: { backgroundColor: "#fff4ce", color: "#8a6914" } },
+                ].map((stat) => {
+                  const Icon = stat.icon;
+                  return (
+                    <Card key={stat.label}>
+                      <CardContent className="flex items-center gap-3">
+                        <div className="w-8 h-8 flex items-center justify-center shrink-0" style={stat.iconStyle}>
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-lg font-bold leading-tight" style={{ color: "#323130" }}>{stat.value}</p>
+                          <p className="text-xs font-medium" style={{ color: "#323130" }}>{stat.label}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {/* Traffic chart */}
+              {!loadingWoo && woo && (() => {
+                const maxPV = Math.max(...woo.trafficTrend.map((t) => t.pageViews), 1);
+                return (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <CardTitle>Traffic Trend — Last 30 Days</CardTitle>
+                        <div className="flex gap-4">
+                          <span className="text-xs font-semibold" style={{ color: "#323130" }}>{woo.totalPageViews.toLocaleString()} views</span>
+                          <span className="text-xs font-semibold" style={{ color: "#107c10" }}>{woo.totalVisitors.toLocaleString()} unique visitors</span>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-end gap-px" style={{ height: 96 }}>
+                        {woo.trafficTrend.map((point) => {
+                          const heightPct = point.pageViews === 0 ? 0 : Math.max((point.pageViews / maxPV) * 100, 4);
+                          const visitorPct = point.pageViews === 0 ? 0 : Math.min((point.visitors / point.pageViews) * 100, 100);
+                          return (
+                            <div key={point.date} className="flex-1 flex flex-col justify-end group relative cursor-default">
+                              <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block z-10 pointer-events-none">
+                                <div className="px-2 py-1 whitespace-nowrap text-center" style={{ backgroundColor: "#323130", color: "#fff", fontSize: 10 }}>
+                                  <div style={{ color: "#edebe9" }}>{point.date}</div>
+                                  <div style={{ color: "#9bd89a" }}>{point.visitors} visitors</div>
+                                  <div style={{ color: "#9bbce8" }}>{point.pageViews} views</div>
+                                </div>
+                              </div>
+                              {point.pageViews > 0 ? (
+                                <div className="w-full overflow-hidden" style={{ height: `${heightPct}%` }}>
+                                  <div style={{ height: `${visitorPct}%`, backgroundColor: "#107c10", minHeight: point.visitors > 0 ? 2 : 0 }} />
+                                  <div style={{ height: `${100 - visitorPct}%`, backgroundColor: "#0078d4", minHeight: 2 }} />
+                                </div>
+                              ) : (
+                                <div className="w-full" style={{ height: 2, backgroundColor: "#edebe9" }} />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="flex gap-4 mt-2.5">
+                        <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5" style={{ backgroundColor: "#107c10" }} /><span className="text-xs" style={{ color: "#605e5c" }}>Unique Visitors</span></div>
+                        <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5" style={{ backgroundColor: "#0078d4" }} /><span className="text-xs" style={{ color: "#605e5c" }}>Page Views</span></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
+              {/* Top Pages + Avg Time side by side */}
+              {!loadingWoo && woo && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {/* Top Pages */}
+                  {woo.topPages.length > 0 ? (
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center gap-2">
+                          <Eye size={12} style={{ color: "#0078d4" }} />
+                          <CardTitle>Top Pages</CardTitle>
+                        </div>
+                      </CardHeader>
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr style={{ borderBottom: "1px solid #edebe9", backgroundColor: "#f3f2f1" }}>
+                              <th className="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Page</th>
+                              <th className="text-right px-3 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Total</th>
+                              <th className="text-right px-3 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#0078d4" }}>Unique</th>
+                              <th className="text-right px-3 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#107c10" }}>Return</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {woo.topPages.map((p) => (
+                              <tr key={p.path} style={{ borderBottom: "1px solid #f3f2f1" }}>
+                                <td className="px-3 py-1.5 text-xs font-mono truncate max-w-[140px]" style={{ color: "#323130" }}>{p.path}</td>
+                                <td className="px-3 py-1.5 text-xs text-right font-semibold" style={{ color: "#323130" }}>{p.count}</td>
+                                <td className="px-3 py-1.5 text-xs text-right font-semibold" style={{ color: "#0078d4" }}>{p.unique}</td>
+                                <td className="px-3 py-1.5 text-xs text-right font-semibold" style={{ color: "#107c10" }}>{p.returning}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </Card>
+                  ) : (
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center gap-2">
+                          <Eye size={12} style={{ color: "#0078d4" }} />
+                          <CardTitle>Top Pages — Setup Required</CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <p className="text-xs" style={{ color: "#605e5c" }}>
+                          Add the snippet below to your WordPress site to start tracking page views.
+                        </p>
+                        <p className="text-xs font-semibold" style={{ color: "#323130" }}>
+                          WordPress admin → Appearance → Theme File Editor → <span className="font-mono">functions.php</span>
+                        </p>
+                        <TrackingSnippet siteId={siteId} />
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Average Time on Page */}
+                  {woo.avgTimePerPage.length > 0 ? (
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center gap-2">
+                          <Clock size={12} style={{ color: "#6b2fa0" }} />
+                          <CardTitle>Avg Time on Page</CardTitle>
+                        </div>
+                      </CardHeader>
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr style={{ borderBottom: "1px solid #edebe9", backgroundColor: "#f3f2f1" }}>
+                              <th className="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Page</th>
+                              <th className="text-right px-3 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Views</th>
+                              <th className="text-right px-3 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#6b2fa0" }}>Avg Time</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {woo.avgTimePerPage.map((p) => (
+                              <tr key={p.path} style={{ borderBottom: "1px solid #f3f2f1" }}>
+                                <td className="px-3 py-1.5 text-xs font-mono truncate max-w-[140px]" style={{ color: "#323130" }}>{p.path}</td>
+                                <td className="px-3 py-1.5 text-xs text-right font-semibold" style={{ color: "#323130" }}>{p.count}</td>
+                                <td className="px-3 py-1.5 text-xs text-right font-semibold" style={{ color: "#6b2fa0" }}>{fmtDuration(p.avgMs)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </Card>
+                  ) : (
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center gap-2">
+                          <Clock size={12} style={{ color: "#6b2fa0" }} />
+                          <CardTitle>Avg Time on Page</CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-xs" style={{ color: "#a19f9d" }}>
+                          No time data yet. Update your tracking snippet to enable duration tracking.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              {/* PI Mapping */}
+              {!loadingWoo && woo && woo.topPages.length > 0 && (() => {
+                const totalImpressions = woo.topPages.reduce((s, p) => s + p.count, 0);
+                return (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-2">
+                        <Eye size={12} style={{ color: "#d83b01" }} />
+                        <CardTitle>PI Mapping — Page Impression Distribution</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex flex-wrap gap-1" style={{ minHeight: 72 }}>
+                        {woo.topPages.map((p, i) => {
+                          const pct = (p.count / totalImpressions) * 100;
+                          const color = PI_COLORS[i % PI_COLORS.length];
+                          return (
+                            <div
+                              key={p.path}
+                              className="flex items-center justify-center overflow-hidden cursor-default group relative"
+                              style={{ backgroundColor: color, minWidth: 40, height: 52, flexGrow: pct, flexShrink: 0, width: `${Math.max(pct * 2, 5)}%` }}
+                            >
+                              <div className="absolute inset-0 hidden group-hover:flex flex-col items-center justify-center px-1" style={{ backgroundColor: "rgba(0,0,0,0.55)" }}>
+                                <span className="text-white font-semibold text-center leading-tight" style={{ fontSize: 10 }}>{p.path}</span>
+                                <span className="text-white" style={{ fontSize: 9 }}>{p.count} views · {pct.toFixed(1)}%</span>
+                              </div>
+                              {pct >= 8 && (
+                                <span className="text-white font-semibold text-center px-1 leading-tight truncate max-w-full" style={{ fontSize: 10 }}>
+                                  {p.path.length > 20 ? p.path.slice(0, 18) + "…" : p.path}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                        {woo.topPages.map((p, i) => (
+                          <div key={p.path} className="flex items-center gap-1.5">
+                            <div className="w-2.5 h-2.5 shrink-0" style={{ backgroundColor: PI_COLORS[i % PI_COLORS.length] }} />
+                            <span className="text-xs font-mono" style={{ color: "#323130" }}>{p.path}</span>
+                            <span className="text-xs font-semibold" style={{ color: "#605e5c" }}>{((p.count / totalImpressions) * 100).toFixed(1)}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
+              {/* Order Locations + Most Popular Products */}
+              {!loadingWoo && woo && (woo.orderLocations.length > 0 || woo.mostViewedProducts.length > 0) && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {woo.orderLocations.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center gap-2">
+                          <MapPin size={12} style={{ color: "#0078d4" }} />
+                          <CardTitle>Order Locations</CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-2.5">
+                        {woo.orderLocations.map((loc, i) => {
+                          const total = woo.orderLocations.reduce((s, l) => s + l.count, 0);
+                          const pct = Math.round((loc.count / total) * 100);
+                          return (
+                            <div key={loc.country}>
+                              <div className="flex justify-between mb-1">
+                                <span className="text-xs" style={{ color: "#323130" }}>{loc.country}</span>
+                                <span className="text-xs font-semibold" style={{ color: "#323130" }}>{loc.count} <span style={{ color: "#a19f9d", fontWeight: 400 }}>({pct}%)</span></span>
+                              </div>
+                              <div className="h-1.5 w-full" style={{ backgroundColor: "#f3f2f1" }}>
+                                <div className="h-1.5" style={{ width: `${(loc.count / maxLocation) * 100}%`, backgroundColor: ["#0078d4", "#107c10", "#6b2fa0", "#8a6914", "#a4262c", "#00b7c3", "#d83b01"][i % 7] }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {woo.mostViewedProducts.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center gap-2">
+                          <TrendingUp size={12} style={{ color: "#6b2fa0" }} />
+                          <CardTitle>Most Popular Products</CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-2.5">
+                        {woo.mostViewedProducts.map((p, i) => (
+                          <div key={p.id}>
+                            <div className="flex justify-between mb-1">
+                              <span className="text-xs" style={{ color: "#323130" }}>
+                                <span className="font-semibold mr-1.5" style={{ color: "#a19f9d" }}>#{i + 1}</span>
+                                {p.name}
+                              </span>
+                              <span className="text-xs font-semibold" style={{ color: "#323130" }}>{p.sales} sold</span>
+                            </div>
+                            <div className="h-1.5 w-full" style={{ backgroundColor: "#f3f2f1" }}>
+                              <div className="h-1.5" style={{ width: `${(p.sales / maxViewed) * 100}%`, backgroundColor: "#6b2fa0" }} />
+                            </div>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              {/* Abandoned Carts */}
+              {!loadingWoo && woo && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle size={12} style={{ color: "#8a6914" }} />
+                        <CardTitle>Abandoned Carts</CardTitle>
+                      </div>
+                      <span
+                        className="text-xs font-semibold px-2 py-0.5"
+                        style={woo.abandonedCarts.count > 0
+                          ? { backgroundColor: "#fff4ce", color: "#8a6914" }
+                          : { backgroundColor: "#dff6dd", color: "#107c10" }}
+                      >
+                        {woo.abandonedCarts.count > 0
+                          ? `${woo.abandonedCarts.count} pending order${woo.abandonedCarts.count !== 1 ? "s" : ""} > 1h`
+                          : "No abandoned carts"}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  {woo.abandonedCarts.orders.length === 0 ? (
+                    <CardContent>
+                      <p className="text-xs" style={{ color: "#a19f9d" }}>No pending orders older than 1 hour.</p>
+                    </CardContent>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr style={{ borderBottom: "1px solid #edebe9", backgroundColor: "#f3f2f1" }}>
+                            <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Order #</th>
+                            <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider hidden sm:table-cell" style={{ color: "#605e5c" }}>Customer</th>
+                            <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider hidden md:table-cell" style={{ color: "#605e5c" }}>Items</th>
+                            <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Total</th>
+                            <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Idle</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {woo.abandonedCarts.orders.map((order) => (
+                            <tr key={order.id} style={{ borderBottom: "1px solid #f3f2f1" }}
+                              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f8")}
+                              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "")}
+                            >
+                              <td className="px-3 py-1.5 text-xs font-semibold" style={{ color: "#0078d4" }}>#{order.number}</td>
+                              <td className="px-3 py-1.5 hidden sm:table-cell">
+                                <p className="text-xs font-medium" style={{ color: "#323130" }}>{order.customerName}</p>
+                                {order.email && (
+                                  <a href={`mailto:${order.email}`} className="flex items-center gap-1 text-xs hover:underline" style={{ color: "#0078d4" }}>
+                                    <Mail size={10} />{order.email}
+                                  </a>
+                                )}
+                              </td>
+                              <td className="px-3 py-1.5 text-xs hidden md:table-cell" style={{ color: "#605e5c" }}>
+                                {order.items.map((it) => `${it.quantity}× ${it.name}`).join(", ")}
+                              </td>
+                              <td className="px-3 py-1.5 text-xs font-semibold" style={{ color: "#323130" }}>{order.currency} {order.total}</td>
+                              <td className="px-3 py-1.5">
+                                <span className="inline-flex text-xs font-medium px-1.5 py-0.5"
+                                  style={order.hoursAgo > 24 ? { backgroundColor: "#fde7e9", color: "#a4262c" } : { backgroundColor: "#fff4ce", color: "#8a6914" }}
+                                >{order.hoursAgo}h ago</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </Card>
+              )}
+
+              {/* Recent Orders + Top Sellers */}
+              {!loadingWoo && woo && (woo.recentOrders.length > 0 || woo.topProducts.length > 0) && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {woo.recentOrders.length > 0 && (
+                    <Card>
+                      <CardHeader><CardTitle>Recent Orders</CardTitle></CardHeader>
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr style={{ borderBottom: "1px solid #edebe9", backgroundColor: "#f3f2f1" }}>
+                              <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Order #</th>
+                              <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider hidden sm:table-cell" style={{ color: "#605e5c" }}>Customer</th>
+                              <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Status</th>
+                              <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {woo.recentOrders.map((order) => {
+                              const c = statusColor(order.status);
+                              return (
+                                <tr key={order.id} style={{ borderBottom: "1px solid #f3f2f1" }}
+                                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f8")}
+                                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "")}
+                                >
+                                  <td className="px-3 py-1.5 text-xs font-semibold" style={{ color: "#0078d4" }}>#{order.number}</td>
+                                  <td className="px-3 py-1.5 text-xs hidden sm:table-cell" style={{ color: "#323130" }}>{order.customerName}</td>
+                                  <td className="px-3 py-1.5">
+                                    <span className="inline-flex text-xs font-medium px-1.5 py-0.5" style={{ backgroundColor: c.bg, color: c.text }}>{order.status}</span>
+                                  </td>
+                                  <td className="px-3 py-1.5 text-xs font-semibold" style={{ color: "#323130" }}>{order.currency} {order.total}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </Card>
+                  )}
+
+                  {woo.topProducts.length > 0 && (() => {
+                    const maxQty = Math.max(...woo.topProducts.map((p) => p.quantity), 1);
+                    return (
+                      <Card>
+                        <CardHeader><CardTitle>Top-Selling Products (This Month)</CardTitle></CardHeader>
+                        <CardContent className="space-y-2.5">
+                          {woo.topProducts.map((p, i) => (
+                            <div key={p.productId}>
+                              <div className="flex justify-between mb-1">
+                                <span className="text-xs" style={{ color: "#323130" }}>
+                                  <span className="font-semibold mr-1.5" style={{ color: "#a19f9d" }}>#{i + 1}</span>
+                                  {p.title}
+                                </span>
+                                <span className="text-xs font-semibold" style={{ color: "#323130" }}>{p.quantity} sold</span>
+                              </div>
+                              <div className="h-1.5 w-full" style={{ backgroundColor: "#f3f2f1" }}>
+                                <div className="h-1.5" style={{ width: `${(p.quantity / maxQty) * 100}%`, backgroundColor: "#0078d4" }} />
+                              </div>
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })()}
+                </div>
+              )}
             </>
           )}
 
-          {/* ── Sync trend chart ── */}
+          {/* ── Sync activity ── */}
+          <SectionLabel icon={CheckCircle} label="Sync Activity" />
           <Card>
             <CardHeader><CardTitle>Sync Activity — Last 30 Days</CardTitle></CardHeader>
             <CardContent>
@@ -360,360 +783,7 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
 
-          {/* ── Device / Browser / OS breakdown ── */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Monitor size={12} style={{ color: "#605e5c" }} />
-              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>
-                Admin App Usage — Last 30 Days
-              </span>
-              <span className="text-xs" style={{ color: "#a19f9d" }}>
-                ({totalViews} page views)
-              </span>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-
-              {/* Device */}
-              <Card>
-                <CardHeader><CardTitle>Device</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
-                  {!pv?.devices.length ? (
-                    <p className="text-xs" style={{ color: "#a19f9d" }}>No data yet.</p>
-                  ) : (
-                    pv.devices.map((d) => {
-                      const Icon = DEVICE_ICONS[d.name] ?? Monitor;
-                      const color = DEVICE_COLORS[d.name] ?? "#8a8886";
-                      const pct = Math.round((d.count / totalViews) * 100);
-                      return (
-                        <div key={d.name}>
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-1.5">
-                              <Icon size={12} style={{ color }} />
-                              <span className="text-xs capitalize" style={{ color: "#323130" }}>{d.name}</span>
-                            </div>
-                            <span className="text-xs font-semibold" style={{ color: "#323130" }}>{d.count} <span style={{ color: "#a19f9d", fontWeight: 400 }}>({pct}%)</span></span>
-                          </div>
-                          <div className="h-1.5 w-full" style={{ backgroundColor: "#f3f2f1" }}>
-                            <div className="h-1.5" style={{ width: `${(d.count / maxDevice) * 100}%`, backgroundColor: color }} />
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Browser */}
-              <Card>
-                <CardHeader><CardTitle>Browser</CardTitle></CardHeader>
-                <CardContent className="space-y-2.5">
-                  {!pv?.browsers.length ? (
-                    <p className="text-xs" style={{ color: "#a19f9d" }}>No data yet.</p>
-                  ) : (
-                    pv.browsers.map((b, i) => (
-                      <BarRow
-                        key={b.name}
-                        label={b.name}
-                        value={b.count}
-                        max={maxBrowser}
-                        color={["#0078d4", "#107c10", "#6b2fa0", "#8a6914", "#a4262c"][i % 5]}
-                      />
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* OS */}
-              <Card>
-                <CardHeader><CardTitle>Operating System</CardTitle></CardHeader>
-                <CardContent className="space-y-2.5">
-                  {!pv?.os.length ? (
-                    <p className="text-xs" style={{ color: "#a19f9d" }}>No data yet.</p>
-                  ) : (
-                    pv.os.map((o, i) => (
-                      <BarRow
-                        key={o.name}
-                        label={o.name}
-                        value={o.count}
-                        max={maxOs}
-                        color={["#0078d4", "#107c10", "#6b2fa0", "#8a6914", "#a4262c"][i % 5]}
-                      />
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* ── Top pages ── */}
-          {siteId ? (
-            !loadingWoo && (
-              woo && woo.topPages.length > 0 ? (
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <Eye size={12} style={{ color: "#0078d4" }} />
-                      <CardTitle>Top Pages — {internal?.sites.find((s) => s.id === siteId)?.name} (Last 30 Days)</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr style={{ borderBottom: "1px solid #edebe9", backgroundColor: "#f3f2f1" }}>
-                          <th className="text-left px-4 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Page</th>
-                          <th className="text-right px-4 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Total</th>
-                          <th className="text-right px-4 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#0078d4" }}>Unique</th>
-                          <th className="text-right px-4 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#107c10" }}>Returning</th>
-                          <th className="px-4 py-2 w-32"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {woo.topPages.map((p) => (
-                          <tr key={p.path} style={{ borderBottom: "1px solid #f3f2f1" }}>
-                            <td className="px-4 py-2 text-xs font-mono" style={{ color: "#323130" }}>{p.path}</td>
-                            <td className="px-4 py-2 text-xs text-right font-semibold" style={{ color: "#323130" }}>{p.count}</td>
-                            <td className="px-4 py-2 text-xs text-right font-semibold" style={{ color: "#0078d4" }}>{p.unique}</td>
-                            <td className="px-4 py-2 text-xs text-right font-semibold" style={{ color: "#107c10" }}>{p.returning}</td>
-                            <td className="px-4 py-2">
-                              <div className="h-1.5 w-full" style={{ backgroundColor: "#f3f2f1" }}>
-                                <div className="h-1.5" style={{ width: `${(p.count / maxPage) * 100}%`, backgroundColor: "#0078d4" }} />
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </Card>
-              ) : (
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <Eye size={12} style={{ color: "#0078d4" }} />
-                      <CardTitle>Top Pages — Setup Required</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p className="text-xs" style={{ color: "#605e5c" }}>
-                      WordPress does not expose page view data via its REST API. Add the snippet below to your WooCommerce site to start tracking real page views.
-                    </p>
-                    <p className="text-xs font-semibold" style={{ color: "#323130" }}>
-                      In WordPress admin → Appearance → Theme File Editor → <span className="font-mono">functions.php</span> — paste at the bottom:
-                    </p>
-                    <TrackingSnippet siteId={siteId} />
-                    <p className="text-xs" style={{ color: "#a19f9d" }}>
-                      Once added, page views will appear here within minutes. Data is stored per visitor using localStorage.
-                    </p>
-                  </CardContent>
-                </Card>
-              )
-            )
-          ) : (
-            !!pv?.topPages.length && (
-              <Card>
-                <CardHeader><CardTitle>Top Pages — Admin App (Last 30 Days)</CardTitle></CardHeader>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr style={{ borderBottom: "1px solid #edebe9", backgroundColor: "#f3f2f1" }}>
-                        <th className="text-left px-4 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Page</th>
-                        <th className="text-right px-4 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Total</th>
-                        <th className="text-right px-4 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#0078d4" }}>Unique</th>
-                        <th className="text-right px-4 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#107c10" }}>Returning</th>
-                        <th className="px-4 py-2 w-32"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pv.topPages.map((p) => (
-                        <tr key={p.path} style={{ borderBottom: "1px solid #f3f2f1" }}>
-                          <td className="px-4 py-2 text-xs font-mono" style={{ color: "#323130" }}>{p.path}</td>
-                          <td className="px-4 py-2 text-xs text-right font-semibold" style={{ color: "#323130" }}>{p.count}</td>
-                          <td className="px-4 py-2 text-xs text-right font-semibold" style={{ color: "#0078d4" }}>{p.unique}</td>
-                          <td className="px-4 py-2 text-xs text-right font-semibold" style={{ color: "#107c10" }}>{p.returning}</td>
-                          <td className="px-4 py-2">
-                            <div className="h-1.5 w-full" style={{ backgroundColor: "#f3f2f1" }}>
-                              <div className="h-1.5" style={{ width: `${(p.count / maxPage) * 100}%`, backgroundColor: "#0078d4" }} />
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
-            )
-          )}
-
-          {/* ── WooCommerce: location + most viewed + abandoned ── */}
-          {siteId && !loadingWoo && woo && (
-            <>
-              {/* Order Locations */}
-              {woo.orderLocations.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <MapPin size={12} style={{ color: "#0078d4" }} />
-                      <CardTitle>Order Locations (Last 300 Orders)</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
-                    <div className="overflow-x-auto" style={{ borderRight: "1px solid #edebe9" }}>
-                      <table className="w-full">
-                        <thead>
-                          <tr style={{ borderBottom: "1px solid #edebe9", backgroundColor: "#f3f2f1" }}>
-                            <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Country</th>
-                            <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Orders</th>
-                            <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Share</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {woo.orderLocations.map((loc) => {
-                            const total = woo.orderLocations.reduce((s, l) => s + l.count, 0);
-                            const pct = Math.round((loc.count / total) * 100);
-                            return (
-                              <tr key={loc.country}
-                                style={{ borderBottom: "1px solid #f3f2f1" }}
-                                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f8")}
-                                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "")}
-                              >
-                                <td className="px-3 py-1.5 text-xs font-medium" style={{ color: "#323130" }}>{loc.country}</td>
-                                <td className="px-3 py-1.5 text-xs font-semibold" style={{ color: "#323130" }}>{loc.count}</td>
-                                <td className="px-3 py-1.5 text-xs" style={{ color: "#605e5c" }}>{pct}%</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                    <CardContent className="space-y-2.5">
-                      {woo.orderLocations.map((loc, i) => (
-                        <BarRow
-                          key={loc.country}
-                          label={loc.country}
-                          value={loc.count}
-                          max={maxLocation}
-                          color={["#0078d4", "#107c10", "#6b2fa0", "#8a6914", "#a4262c", "#00b7c3", "#d83b01"][i % 7]}
-                        />
-                      ))}
-                    </CardContent>
-                  </div>
-                </Card>
-              )}
-
-              {/* Most Viewed Products */}
-              {woo.mostViewedProducts.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <Eye size={12} style={{ color: "#6b2fa0" }} />
-                      <CardTitle>Most Popular Products (by Sales Volume)</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2.5">
-                    {woo.mostViewedProducts.map((p, i) => (
-                      <div key={p.id}>
-                        <div className="flex justify-between mb-1">
-                          <span className="text-xs" style={{ color: "#323130" }}>
-                            <span className="font-semibold mr-1.5" style={{ color: "#a19f9d" }}>#{i + 1}</span>
-                            {p.name}
-                          </span>
-                          <span className="text-xs font-semibold" style={{ color: "#323130" }}>{p.sales} sold</span>
-                        </div>
-                        <div className="h-1.5 w-full" style={{ backgroundColor: "#f3f2f1" }}>
-                          <div className="h-1.5" style={{ width: `${(p.sales / maxViewed) * 100}%`, backgroundColor: "#6b2fa0" }} />
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Abandoned Cart Report */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle size={12} style={{ color: "#8a6914" }} />
-                      <CardTitle>Abandoned Carts</CardTitle>
-                    </div>
-                    <span
-                      className="text-xs font-semibold px-2 py-0.5"
-                      style={
-                        woo.abandonedCarts.count > 0
-                          ? { backgroundColor: "#fff4ce", color: "#8a6914" }
-                          : { backgroundColor: "#dff6dd", color: "#107c10" }
-                      }
-                    >
-                      {woo.abandonedCarts.count > 0
-                        ? `${woo.abandonedCarts.count} pending order${woo.abandonedCarts.count !== 1 ? "s" : ""} > 1h`
-                        : "No abandoned carts"}
-                    </span>
-                  </div>
-                </CardHeader>
-                {woo.abandonedCarts.orders.length === 0 ? (
-                  <CardContent>
-                    <p className="text-xs" style={{ color: "#a19f9d" }}>
-                      No pending orders older than 1 hour. Great!
-                    </p>
-                  </CardContent>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr style={{ borderBottom: "1px solid #edebe9", backgroundColor: "#f3f2f1" }}>
-                          <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Order #</th>
-                          <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider hidden sm:table-cell" style={{ color: "#605e5c" }}>Customer</th>
-                          <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider hidden md:table-cell" style={{ color: "#605e5c" }}>Items</th>
-                          <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Total</th>
-                          <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Idle</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {woo.abandonedCarts.orders.map((order) => (
-                          <tr
-                            key={order.id}
-                            style={{ borderBottom: "1px solid #f3f2f1" }}
-                            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f8")}
-                            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "")}
-                          >
-                            <td className="px-3 py-1.5 text-xs font-semibold" style={{ color: "#0078d4" }}>#{order.number}</td>
-                            <td className="px-3 py-1.5 hidden sm:table-cell">
-                              <p className="text-xs font-medium" style={{ color: "#323130" }}>{order.customerName}</p>
-                              {order.email && (
-                                <a href={`mailto:${order.email}`} className="flex items-center gap-1 text-xs hover:underline" style={{ color: "#0078d4" }}>
-                                  <Mail size={10} />{order.email}
-                                </a>
-                              )}
-                            </td>
-                            <td className="px-3 py-1.5 text-xs hidden md:table-cell" style={{ color: "#605e5c" }}>
-                              {order.items.map((it) => `${it.quantity}× ${it.name}`).join(", ")}
-                            </td>
-                            <td className="px-3 py-1.5 text-xs font-semibold" style={{ color: "#323130" }}>
-                              {order.currency} {order.total}
-                            </td>
-                            <td className="px-3 py-1.5">
-                              <span
-                                className="inline-flex text-xs font-medium px-1.5 py-0.5"
-                                style={
-                                  order.hoursAgo > 24
-                                    ? { backgroundColor: "#fde7e9", color: "#a4262c" }
-                                    : { backgroundColor: "#fff4ce", color: "#8a6914" }
-                                }
-                              >
-                                {order.hoursAgo}h ago
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </Card>
-            </>
-          )}
-
-          {/* ── Recent syncs + Activity breakdown ── */}
+          {/* Recent Syncs + Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <Card>
               <CardHeader><CardTitle>Recent Syncs</CardTitle></CardHeader>
@@ -736,8 +806,7 @@ export default function AnalyticsPage() {
                       internal.syncs.recent.map((sync) => {
                         const c = statusColor(sync.status);
                         return (
-                          <tr key={sync.id}
-                            style={{ borderBottom: "1px solid #f3f2f1" }}
+                          <tr key={sync.id} style={{ borderBottom: "1px solid #f3f2f1" }}
                             onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f8")}
                             onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "")}
                           >
@@ -780,73 +849,7 @@ export default function AnalyticsPage() {
             </Card>
           </div>
 
-          {/* ── WooCommerce recent orders ── */}
-          {siteId && !loadingWoo && woo && woo.recentOrders.length > 0 && (
-            <Card>
-              <CardHeader><CardTitle>Recent WooCommerce Orders</CardTitle></CardHeader>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid #edebe9", backgroundColor: "#f3f2f1" }}>
-                      <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Order #</th>
-                      <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider hidden sm:table-cell" style={{ color: "#605e5c" }}>Customer</th>
-                      <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Status</th>
-                      <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#605e5c" }}>Total</th>
-                      <th className="text-left px-3 py-1.5 text-xs font-semibold uppercase tracking-wider hidden md:table-cell" style={{ color: "#605e5c" }}>Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {woo.recentOrders.map((order) => {
-                      const c = statusColor(order.status);
-                      return (
-                        <tr key={order.id}
-                          style={{ borderBottom: "1px solid #f3f2f1" }}
-                          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f8")}
-                          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "")}
-                        >
-                          <td className="px-3 py-1.5 text-xs font-semibold" style={{ color: "#0078d4" }}>#{order.number}</td>
-                          <td className="px-3 py-1.5 text-xs hidden sm:table-cell" style={{ color: "#323130" }}>{order.customerName}</td>
-                          <td className="px-3 py-1.5">
-                            <span className="inline-flex text-xs font-medium px-1.5 py-0.5" style={{ backgroundColor: c.bg, color: c.text }}>{order.status}</span>
-                          </td>
-                          <td className="px-3 py-1.5 text-xs font-semibold" style={{ color: "#323130" }}>{order.currency} {order.total}</td>
-                          <td className="px-3 py-1.5 text-xs hidden md:table-cell" style={{ color: "#605e5c" }}>{new Date(order.date).toLocaleDateString()}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          )}
-
-          {/* ── Top-selling products ── */}
-          {siteId && !loadingWoo && woo && woo.topProducts.length > 0 && (
-            <Card>
-              <CardHeader><CardTitle>Top-Selling Products This Month</CardTitle></CardHeader>
-              <CardContent className="space-y-2.5">
-                {(() => {
-                  const maxQty = Math.max(...woo.topProducts.map((p) => p.quantity), 1);
-                  return woo.topProducts.map((p, i) => (
-                    <div key={p.productId}>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-xs" style={{ color: "#323130" }}>
-                          <span className="font-semibold mr-1.5" style={{ color: "#a19f9d" }}>#{i + 1}</span>
-                          {p.title}
-                        </span>
-                        <span className="text-xs font-semibold" style={{ color: "#323130" }}>{p.quantity} sold</span>
-                      </div>
-                      <div className="h-1.5 w-full" style={{ backgroundColor: "#f3f2f1" }}>
-                        <div className="h-1.5" style={{ width: `${(p.quantity / maxQty) * 100}%`, backgroundColor: "#0078d4" }} />
-                      </div>
-                    </div>
-                  ));
-                })()}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* ── Sites overview (all-sites view) ── */}
+          {/* Sites overview (all-sites view only) */}
           {!siteId && internal && (
             <Card>
               <CardHeader><CardTitle>Sites Overview</CardTitle></CardHeader>
@@ -865,8 +868,7 @@ export default function AnalyticsPage() {
                       <tr><td colSpan={4} className="px-3 py-6 text-center text-xs" style={{ color: "#a19f9d" }}>No sites configured.</td></tr>
                     ) : (
                       internal.sites.map((site) => (
-                        <tr key={site.id}
-                          style={{ borderBottom: "1px solid #f3f2f1" }}
+                        <tr key={site.id} style={{ borderBottom: "1px solid #f3f2f1" }}
                           onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f8")}
                           onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "")}
                         >
@@ -874,9 +876,7 @@ export default function AnalyticsPage() {
                           <td className="px-3 py-1.5 text-xs hidden sm:table-cell" style={{ color: "#605e5c" }}>{site.url}</td>
                           <td className="px-3 py-1.5">
                             <span className="inline-flex text-xs font-medium px-1.5 py-0.5"
-                              style={site.status === "active"
-                                ? { backgroundColor: "#dff6dd", color: "#107c10" }
-                                : { backgroundColor: "#f3f2f1", color: "#605e5c" }}
+                              style={site.status === "active" ? { backgroundColor: "#dff6dd", color: "#107c10" } : { backgroundColor: "#f3f2f1", color: "#605e5c" }}
                             >{site.status}</span>
                           </td>
                           <td className="px-3 py-1.5 text-xs font-semibold" style={{ color: "#323130" }}>{site._count.syncs}</td>

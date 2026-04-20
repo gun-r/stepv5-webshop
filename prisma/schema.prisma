@@ -87,6 +87,7 @@ model WooPageView {
   browser   String?
   os        String?
   referer   String?
+  duration  Int?
   createdAt DateTime @default(now())
   site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
 }
@@ -249,3 +250,4 @@ model ProductAttributeTerm {
 
   @@unique([attributeId, slug])
 }
+

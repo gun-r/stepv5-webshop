@@ -71,33 +71,66 @@ export async function GET(req: NextRequest) {
   // One hour ago (for abandoned cart threshold)
   const abandonedBefore = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
-  // ── WooPageView top pages (our own tracking) ──
-  const topPagesRaw = await prisma.wooPageView.groupBy({
-    by: ["path"],
+  // ── WooPageView: all rows for the period (used for traffic, top pages, avg time) ──
+  const allViews = await prisma.wooPageView.findMany({
     where: { siteId, createdAt: { gte: thirtyDaysAgo } },
-    _count: { path: true },
-    orderBy: { _count: { path: "desc" } },
-    take: 10,
-  }).catch(() => [] as { path: string; _count: { path: number } }[]);
+    select: { createdAt: true, path: true, visitorId: true, duration: true },
+  }).catch(() => [] as { createdAt: Date; path: string; visitorId: string | null; duration: number | null }[]);
 
-  let topPages: { path: string; count: number; unique: number; returning: number }[] = [];
-  if (topPagesRaw.length > 0) {
-    const topPaths = topPagesRaw.map((p) => p.path);
-    const visitorRows = await prisma.wooPageView.findMany({
-      where: { siteId, createdAt: { gte: thirtyDaysAgo }, path: { in: topPaths } },
-      select: { path: true, visitorId: true },
-    }).catch(() => [] as { path: string; visitorId: string | null }[]);
-
-    const pathVisitors: Record<string, Set<string>> = {};
-    for (const row of visitorRows) {
-      if (!pathVisitors[row.path]) pathVisitors[row.path] = new Set();
-      if (row.visitorId) pathVisitors[row.path].add(row.visitorId);
-    }
-    topPages = topPagesRaw.map((p) => {
-      const unique = pathVisitors[p.path]?.size ?? 0;
-      return { path: p.path, count: p._count.path, unique, returning: Math.max(0, p._count.path - unique) };
-    });
+  // Traffic trend (daily page views + unique visitors)
+  const trafficBuckets: Record<string, { views: number; visitors: Set<string> }> = {};
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    trafficBuckets[d.toISOString().slice(0, 10)] = { views: 0, visitors: new Set() };
   }
+  for (const row of allViews) {
+    const key = row.createdAt.toISOString().slice(0, 10);
+    if (trafficBuckets[key]) {
+      trafficBuckets[key].views++;
+      if (row.visitorId) trafficBuckets[key].visitors.add(row.visitorId);
+    }
+  }
+  const trafficTrend = Object.entries(trafficBuckets).map(([date, b]) => ({
+    date,
+    pageViews: b.views,
+    visitors: b.visitors.size,
+  }));
+  const totalVisitors = new Set(allViews.map((r) => r.visitorId).filter(Boolean)).size;
+  const totalPageViews = allViews.length;
+
+  // Top pages
+  const pathCountMap: Record<string, number> = {};
+  const pathVisitorsMap: Record<string, Set<string>> = {};
+  for (const row of allViews) {
+    pathCountMap[row.path] = (pathCountMap[row.path] ?? 0) + 1;
+    if (!pathVisitorsMap[row.path]) pathVisitorsMap[row.path] = new Set();
+    if (row.visitorId) pathVisitorsMap[row.path].add(row.visitorId);
+  }
+  const topPages = Object.entries(pathCountMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([path, count]) => {
+      const unique = pathVisitorsMap[path]?.size ?? 0;
+      return { path, count, unique, returning: Math.max(0, count - unique) };
+    });
+
+  // Average time per page (only rows with a recorded duration)
+  const pathDurations: Record<string, number[]> = {};
+  for (const row of allViews) {
+    if (row.duration && row.duration > 0) {
+      if (!pathDurations[row.path]) pathDurations[row.path] = [];
+      pathDurations[row.path].push(row.duration);
+    }
+  }
+  const avgTimePerPage = Object.entries(pathDurations)
+    .map(([path, durations]) => ({
+      path,
+      avgMs: Math.round(durations.reduce((s, d) => s + d, 0) / durations.length),
+      count: pathCountMap[path] ?? durations.length,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 15);
 
   const [
     ordersRes,
@@ -228,6 +261,11 @@ export async function GET(req: NextRequest) {
     sales: salesData,
     totalCustomers,
     totalWooProducts,
+    totalVisitors,
+    totalPageViews,
+    productsCommissioned: salesData?.total_items ?? null,
+    trafficTrend,
+    avgTimePerPage,
     recentOrders: rawOrders.slice(0, 5).map((o) => ({
       id: o.id,
       number: o.number,
