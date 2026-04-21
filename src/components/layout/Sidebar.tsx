@@ -19,6 +19,7 @@ import {
   Tag,
   SlidersHorizontal,
   FolderOpen,
+  Box,
 } from "lucide-react";
 import { useMobileSidebar } from "./MobileSidebarContext";
 
@@ -41,6 +42,7 @@ const productSubItems = [
   { href: "/products/categories", label: "Categories", icon: FolderOpen },
   { href: "/products/tags", label: "Tags", icon: Tag },
   { href: "/products/attributes", label: "Attributes", icon: SlidersHorizontal },
+  { href: "/products/odoo", label: "Odoo Products", icon: Box },
 ];
 
 export function Sidebar() {
